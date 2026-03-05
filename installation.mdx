@@ -1,0 +1,118 @@
+---
+title: Installation
+description: Install React Voice Visualizer in your React project
+---
+
+## Prerequisites
+
+Before installing React Voice Visualizer, ensure your project meets the following requirements:
+
+- **React**: Version 18.2.0 or higher, or React 19.0.0+
+- **React DOM**: Version 18.2.0 or higher, or React 19.0.0+
+- **Node.js**: A recent LTS version is recommended
+
+<Note>
+  React Voice Visualizer requires React 18.2.0+ or React 19.0.0+ as peer dependencies. Make sure your project has React installed before adding this library.
+</Note>
+
+## Package Installation
+
+Install React Voice Visualizer using your preferred package manager:
+
+<CodeGroup>
+
+```bash npm
+npm install react-voice-visualizer
+```
+
+```bash yarn
+yarn add react-voice-visualizer
+```
+
+```bash pnpm
+pnpm add react-voice-visualizer
+```
+
+</CodeGroup>
+
+## Verify Installation
+
+After installation, verify that the package is correctly installed by checking your `package.json`:
+
+```json package.json
+{
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-voice-visualizer": "^2.0.8"
+  }
+}
+```
+
+## TypeScript Support
+
+React Voice Visualizer is written in TypeScript and includes full type definitions out of the box. No additional `@types` packages are needed.
+
+<Note>
+  The library exports TypeScript types for all components, hooks, and their props. You'll get full IntelliSense and type safety when using the library in TypeScript projects.
+</Note>
+
+## Framework Compatibility
+
+React Voice Visualizer works seamlessly with popular React frameworks and build tools:
+
+### Vite
+
+No additional configuration needed. The library works out of the box with Vite:
+
+```typescript
+import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
+```
+
+### Next.js
+
+For Next.js 13+ with App Router, use client components:
+
+```typescript
+"use client";
+
+import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
+```
+
+<Note>
+  Since React Voice Visualizer uses browser APIs like `navigator.mediaDevices` and `MediaRecorder`, it must be used in client-side components. Add the `"use client"` directive at the top of your component file in Next.js.
+</Note>
+
+### Create React App
+
+Works directly without any configuration:
+
+```typescript
+import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
+```
+
+## Browser Compatibility
+
+React Voice Visualizer relies on modern browser APIs. Ensure your target browsers support:
+
+- **Web Audio API**: For audio processing and analysis
+- **MediaRecorder API**: For audio recording
+- **getUserMedia API**: For microphone access
+- **Canvas API**: For waveform visualization
+
+<Warning>
+  Most modern browsers support these APIs, but older versions of Internet Explorer and some mobile browsers may have limited support. Always test your application in your target browsers.
+</Warning>
+
+## What's Included
+
+The library exports two main items:
+
+- **`useVoiceVisualizer`**: A React hook that provides recorder controls and state
+- **`VoiceVisualizer`**: A React component that renders the audio visualizer
+
+## Next Steps
+
+<Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+  Learn how to build your first audio visualizer in minutes
+</Card>

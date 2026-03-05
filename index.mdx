@@ -1,97 +1,200 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+mode: "custom"
 ---
 
-## Setting up
+<div className="relative overflow-hidden dark:bg-[#0f1117] bg-white">
+  {/* Hero Section */}
+  <div className="relative py-20 bg-gradient-to-br from-[#cb0404] via-[#e37b84] to-[#f3d2d2]">
+    <div className="max-w-6xl mx-auto px-6 lg:px-8">
+      <div className="grid lg:grid-cols-12 gap-8 items-center">
+        <div className="lg:col-span-7">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
+            React Voice Visualizer
+          </h1>
+          <p className="text-lg sm:text-xl text-white/90 max-w-2xl mb-8">
+            Capture, visualize, and control audio recordings in your React applications with real-time waveform visualization powered by the Web Audio API.
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <a 
+              href="/quickstart" 
+              className="inline-flex items-center px-6 py-3 rounded-full bg-white text-[#cb0404] font-semibold hover:bg-gray-100 transition-colors"
+            >
+              Get Started
+            </a>
+            <a 
+              href="/api/use-voice-visualizer" 
+              className="inline-flex items-center px-6 py-3 rounded-full border-2 border-white/30 bg-white/10 text-white font-semibold hover:bg-white/20 transition-colors"
+            >
+              API Reference
+            </a>
+          </div>
+        </div>
+        <div className="lg:col-span-5">
+          <div className="relative">
+            <div className="rounded-2xl dark:bg-[#1a1d27] bg-gray-50 p-8 shadow-2xl border dark:border-[#27272a] border-gray-200">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500"></div>
+              </div>
+              <pre className="text-sm dark:text-gray-300 text-gray-700 overflow-x-auto">
+                <code>{`import { 
+  useVoiceVisualizer,
+  VoiceVisualizer 
+} from "react-voice-visualizer";
 
-Get your documentation site up and running in minutes.
+const App = () => {
+  const controls = 
+    useVoiceVisualizer();
+  
+  return (
+    <VoiceVisualizer 
+      controls={controls} 
+    />
+  );
+};`}</code>
+              </pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+  {/* Quick Start Section */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-3xl font-bold dark:text-white text-gray-900 mb-4">Quick Start</h2>
+    <p className="text-lg dark:text-gray-400 text-gray-600 mb-8">
+      Get up and running with React Voice Visualizer in minutes.
+    </p>
+    
+    <Steps>
+      <Step title="Install the package">
+        Install react-voice-visualizer using your preferred package manager:
+        
+        <CodeGroup>
+        ```bash npm
+        npm install react-voice-visualizer
+        ```
+        
+        ```bash yarn
+        yarn add react-voice-visualizer
+        ```
+        
+        ```bash pnpm
+        pnpm add react-voice-visualizer
+        ```
+        </CodeGroup>
+      </Step>
+      
+      <Step title="Import and initialize">
+        Import the hook and component, then initialize the recorder controls:
+        
+        ```typescript
+        import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
 
-## Make it yours
+        const App = () => {
+          const recorderControls = useVoiceVisualizer();
+          
+          return <VoiceVisualizer controls={recorderControls} />;
+        };
+        ```
+      </Step>
+      
+      <Step title="Start recording">
+        The component includes built-in controls for recording, or use the hook functions directly:
+        
+        ```typescript
+        const { startRecording, stopRecording, recordedBlob } = recorderControls;
 
-Design a docs site that looks great and empowers your users.
+        // Start recording
+        startRecording();
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+        // Stop and access the recorded audio
+        stopRecording();
+        console.log(recordedBlob);
+        ```
+      </Step>
+    </Steps>
+  </div>
 
-## Create beautiful pages
+  {/* Features Section */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-3xl font-bold dark:text-white text-gray-900 mb-4">Key Features</h2>
+    <p className="text-lg dark:text-gray-400 text-gray-600 mb-8">
+      Everything you need for audio recording and visualization in React.
+    </p>
+    
+    <CardGroup cols={3}>
+      <Card title="Real-Time Visualization" icon="waveform-lines" href="/concepts/visualization">
+        Beautiful real-time audio waveform rendering with customizable colors and animations.
+      </Card>
+      <Card title="Full Recording Control" icon="microphone" href="/concepts/recording">
+        Start, pause, resume, and stop recording with comprehensive state management.
+      </Card>
+      <Card title="Playback Controls" icon="play" href="/concepts/playback">
+        Built-in audio playback with progress tracking and interactive seeking.
+      </Card>
+      <Card title="TypeScript Support" icon="code" href="/api/types">
+        Fully typed API with comprehensive TypeScript definitions and IntelliSense support.
+      </Card>
+      <Card title="Customizable UI" icon="palette" href="/guides/customization">
+        Extensive styling options or build your own custom UI with hook functions.
+      </Card>
+      <Card title="Preloaded Audio" icon="file-audio" href="/guides/preloaded-audio">
+        Load and visualize existing audio files from any source.
+      </Card>
+    </CardGroup>
+  </div>
 
-Everything you need to create world-class documentation.
+  {/* Explore Documentation */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <h2 className="text-3xl font-bold dark:text-white text-gray-900 mb-4">Explore the Documentation</h2>
+    <p className="text-lg dark:text-gray-400 text-gray-600 mb-8">
+      Learn how to integrate and customize React Voice Visualizer for your use case.
+    </p>
+    
+    <CardGroup cols={2}>
+      <Card title="Core Concepts" icon="book-open" href="/concepts/overview">
+        Understand how the library works with the Web Audio API and React.
+      </Card>
+      <Card title="API Reference" icon="brackets-curly" href="/api/use-voice-visualizer">
+        Complete reference for the hook, component props, and TypeScript types.
+      </Card>
+      <Card title="Usage Guides" icon="map" href="/guides/basic-usage">
+        Step-by-step guides for common use cases and advanced scenarios.
+      </Card>
+      <Card title="Migration Guide" icon="arrow-right-arrow-left" href="/migration/v2">
+        Upgrade from v1.x to v2.x with breaking changes and new features.
+      </Card>
+    </CardGroup>
+  </div>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+  {/* CTA Section */}
+  <div className="mt-16 mb-16 max-w-5xl mx-auto px-6">
+    <div className="rounded-2xl dark:bg-gradient-to-br dark:from-[#1a1d27] dark:to-[#242838] bg-gradient-to-br from-gray-50 to-gray-100 dark:border-[#27272a] border-gray-200 border p-8 lg:p-12 text-center">
+      <h2 className="text-2xl lg:text-3xl font-bold dark:text-white text-gray-900 mb-4">
+        Ready to add voice recording to your app?
+      </h2>
+      <p className="text-lg dark:text-gray-400 text-gray-600 mb-6 max-w-2xl mx-auto">
+        Start building with React Voice Visualizer today. Check out the quickstart guide or explore the API reference.
+      </p>
+      <div className="flex flex-wrap justify-center gap-4">
+        <a 
+          href="/quickstart" 
+          className="inline-flex items-center px-6 py-3 rounded-full bg-[#cb0404] text-white font-semibold hover:bg-[#a60303] transition-colors"
+        >
+          Get Started
+        </a>
+        <a 
+          href="https://github.com/YZarytskyi/react-voice-visualizer" 
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center px-6 py-3 rounded-full dark:border-[#27272a] dark:bg-[#1a1d27] dark:text-white dark:hover:bg-[#242838] border-gray-300 bg-white text-gray-900 hover:bg-gray-50 border-2 font-semibold transition-colors"
+        >
+          View on GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

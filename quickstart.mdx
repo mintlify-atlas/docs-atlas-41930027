@@ -1,80 +1,207 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick Start
+description: Build your first audio visualizer in minutes
 ---
 
-## Get started in three steps
+## Overview
 
-Get your documentation site running locally and make your first customization.
+This guide will walk you through creating a fully functional audio recorder with real-time visualization. You'll learn how to use the `useVoiceVisualizer` hook and `VoiceVisualizer` component to build a complete audio recording experience.
 
-### Step 1: Set up your local environment
+<Tip>
+  Check out the [live demo app](https://react-voice-visualizer.vercel.app/) to see what you'll be building!
+</Tip>
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+## Installation
 
-### Step 2: Deploy your changes
+First, install the package if you haven't already:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+<CodeGroup>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+```bash npm
+npm install react-voice-visualizer
+```
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+```bash yarn
+yarn add react-voice-visualizer
+```
 
-### Step 3: Go live
+```bash pnpm
+pnpm add react-voice-visualizer
+```
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+</CodeGroup>
 
-## Next steps
+## Basic Implementation
 
-Now that you have your docs running, explore these key features:
+<Steps>
+  <Step title="Import the hook and component">
+    Import `useVoiceVisualizer` and `VoiceVisualizer` from the library:
+
+    ```typescript
+    import { useEffect } from "react";
+    import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
+    ```
+  </Step>
+
+  <Step title="Initialize the recorder controls">
+    Use the `useVoiceVisualizer` hook to initialize the recorder controls. This hook returns all the state and functions needed to manage audio recording:
+
+    ```typescript
+    const App = () => {
+      // Initialize the recorder controls using the hook
+      const recorderControls = useVoiceVisualizer();
+      const {
+        // ... (Extracted controls and states, if necessary)
+        recordedBlob,
+        error,
+      } = recorderControls;
+    };
+    ```
+
+    <Tip>
+      The `useVoiceVisualizer` hook handles all the complexity of microphone access, recording state, and audio processing. You just need to pass the returned controls to the component.
+    </Tip>
+  </Step>
+
+  <Step title="Access the recorded audio">
+    Use React's `useEffect` hook to access the recorded audio blob when recording completes:
+
+    ```typescript
+    // Get the recorded audio blob
+    useEffect(() => {
+      if (!recordedBlob) return;
+
+      console.log(recordedBlob);
+      // You can now upload the blob, convert it, or process it further
+    }, [recordedBlob]);
+
+    // Get the error when it occurs
+    useEffect(() => {
+      if (!error) return;
+
+      console.error(error);
+    }, [error]);
+    ```
+
+    <Note>
+      The `recordedBlob` is a Blob object containing the recorded audio in WebM format. You can upload it to a server, convert it to other formats using libraries like FFmpeg, or play it back directly.
+    </Note>
+  </Step>
+
+  <Step title="Render the VoiceVisualizer component">
+    Pass the recorder controls to the `VoiceVisualizer` component:
+
+    ```typescript
+    return (
+      <VoiceVisualizer controls={recorderControls} />
+    );
+    ```
+
+    The `VoiceVisualizer` component provides:
+    - Real-time audio waveform visualization
+    - Built-in recording controls (start, pause, stop)
+    - Playback controls for recorded audio
+    - Audio duration and time tracking
+  </Step>
+</Steps>
+
+## Complete Example
+
+Here's the complete code for a basic audio recorder with visualization:
+
+```typescript App.tsx
+import { useEffect } from "react";
+import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
+
+const App = () => {
+  // Initialize the recorder controls using the hook
+  const recorderControls = useVoiceVisualizer();
+  const {
+    // ... (Extracted controls and states, if necessary)
+    recordedBlob,
+    error,
+  } = recorderControls;
+
+  // Get the recorded audio blob
+  useEffect(() => {
+    if (!recordedBlob) return;
+
+    console.log(recordedBlob);
+  }, [recordedBlob]);
+
+  // Get the error when it occurs
+  useEffect(() => {
+    if (!error) return;
+
+    console.error(error);
+  }, [error]);
+
+  return (
+    <VoiceVisualizer controls={recorderControls} />
+  );
+};
+
+export default App;
+```
+
+<Tip>
+  This basic setup gives you a fully functional audio recorder with visualization. The component includes built-in UI controls, so you don't need to build your own buttons!
+</Tip>
+
+## What You Get Out of the Box
+
+With this minimal setup, you automatically get:
+
+- **Microphone Access**: Automatic browser permission handling
+- **Real-Time Visualization**: Animated audio waveforms during recording
+- **Recording Controls**: Start, pause, resume, and stop recording
+- **Playback Controls**: Play, pause, and seek through recorded audio
+- **Time Tracking**: Display of recording time and audio duration
+- **Audio Export**: Access to the recorded audio as a Blob for upload or processing
+- **Error Handling**: Automatic error management for recording and playback
+
+## Using Recorder Controls
+
+The `useVoiceVisualizer` hook returns an object with many useful properties and functions:
+
+```typescript
+const {
+  // States
+  isRecordingInProgress,
+  isPausedRecording,
+  recordedBlob,
+  duration,
+  error,
+  
+  // Functions
+  startRecording,
+  stopRecording,
+  togglePauseResume,
+  clearCanvas,
+  saveAudioFile,
+} = useVoiceVisualizer();
+```
+
+<Card title="API Reference" icon="book" href="/api/use-voice-visualizer">
+  See the complete API documentation for all available controls and states
+</Card>
+
+## Next Steps
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Customization" icon="palette" href="/guides/customization">
+    Learn how to customize colors, dimensions, and appearance
+  </Card>
+  
+  <Card title="Advanced Usage" icon="code" href="/guides/custom-ui">
+    Build custom UI controls and handle advanced use cases
+  </Card>
+  
+  <Card title="API Reference" icon="book" href="/api/use-voice-visualizer">
+    Explore all available props, methods, and callbacks
+  </Card>
+  
+  <Card title="Basic Usage Guide" icon="sparkles" href="/guides/basic-usage">
+    Browse code examples and common patterns
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

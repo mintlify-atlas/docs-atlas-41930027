@@ -1,0 +1,418 @@
+---
+title: Customization
+description: Customize the appearance and behavior of your audio visualizer
+---
+
+## Overview
+
+The VoiceVisualizer component is highly customizable, allowing you to tailor the visual appearance to match your application's design. You can control colors, dimensions, bar styling, and animation behavior.
+
+## Visual Customization Props
+
+All customization props are passed directly to the `<VoiceVisualizer>` component:
+
+```jsx
+<VoiceVisualizer
+  controls={recorderControls}
+  height={200}
+  width="100%"
+  backgroundColor="transparent"
+  mainBarColor="#FFFFFF"
+  secondaryBarColor="#5e5e5e"
+  barWidth={2}
+  gap={1}
+  rounded={5}
+  speed={3}
+  animateCurrentPick={true}
+  fullscreen={false}
+/>
+```
+
+## Dimensions
+
+### Height and Width
+
+Control the size of the visualization canvas:
+
+```jsx
+<VoiceVisualizer
+  controls={recorderControls}
+  height={300}           // Can be number (pixels) or string ("300px", "50vh")
+  width="100%"           // Can be number (pixels) or string ("500px", "80%")
+/>
+```
+
+<Accordion title="Dimension Examples">
+
+```jsx
+// Fixed dimensions
+<VoiceVisualizer height={200} width={600} />
+
+// Responsive width with fixed height
+<VoiceVisualizer height={250} width="100%" />
+
+// Using viewport units
+<VoiceVisualizer height="40vh" width="90vw" />
+
+// Using CSS custom properties
+<VoiceVisualizer height="var(--visualizer-height)" width="100%" />
+```
+
+</Accordion>
+
+## Colors
+
+### Background Color
+
+Set the canvas background color:
+
+```jsx
+<VoiceVisualizer
+  controls={recorderControls}
+  backgroundColor="transparent"  // Default
+  // or
+  backgroundColor="#000000"
+  // or
+  backgroundColor="rgba(0, 0, 0, 0.5)"
+/>
+```
+
+### Bar Colors
+
+Customize the main and secondary bar colors:
+
+<Tabs>
+  <Tab title="Light Theme">
+    ```jsx
+    <VoiceVisualizer
+      controls={recorderControls}
+      backgroundColor="#f5f5f5"
+      mainBarColor="#2563eb"      // Blue bars
+      secondaryBarColor="#94a3b8"  // Gray bars
+    />
+    ```
+  </Tab>
+  <Tab title="Dark Theme">
+    ```jsx
+    <VoiceVisualizer
+      controls={recorderControls}
+      backgroundColor="#1a1a1a"
+      mainBarColor="#60a5fa"       // Light blue bars
+      secondaryBarColor="#475569"  // Darker gray bars
+    />
+    ```
+  </Tab>
+  <Tab title="Gradient Effect">
+    ```jsx
+    <VoiceVisualizer
+      controls={recorderControls}
+      backgroundColor="#0f172a"
+      mainBarColor="#a78bfa"       // Purple
+      secondaryBarColor="#1e293b"  // Dark slate
+    />
+    ```
+  </Tab>
+  <Tab title="Monochrome">
+    ```jsx
+    <VoiceVisualizer
+      controls={recorderControls}
+      backgroundColor="transparent"
+      mainBarColor="#ffffff"
+      secondaryBarColor="#5e5e5e"
+    />
+    ```
+  </Tab>
+</Tabs>
+
+<Tip>
+**Main vs Secondary Bars**: The `mainBarColor` is used for the active/current audio bars, while `secondaryBarColor` is used for previously recorded bars and inactive sections.
+</Tip>
+
+## Bar Styling
+
+### Bar Width and Gap
+
+Control the thickness of bars and spacing between them:
+
+```jsx
+<VoiceVisualizer
+  controls={recorderControls}
+  barWidth={2}   // Width of each bar in pixels (default: 2)
+  gap={1}        // Gap between bars as a multiplier (default: 1)
+/>
+```
+
+<Tabs>
+  <Tab title="Thin Bars">
+    ```jsx
+    <VoiceVisualizer
+      barWidth={1}
+      gap={1}
+      // Creates a dense, detailed visualization
+    />
+    ```
+  </Tab>
+  <Tab title="Medium Bars">
+    ```jsx
+    <VoiceVisualizer
+      barWidth={3}
+      gap={2}
+      // Balanced appearance (recommended)
+    />
+    ```
+  </Tab>
+  <Tab title="Thick Bars">
+    ```jsx
+    <VoiceVisualizer
+      barWidth={5}
+      gap={3}
+      // Bold, modern look
+    />
+    ```
+  </Tab>
+</Tabs>
+
+### Rounded Corners
+
+Apply border radius to the bars:
+
+```jsx
+<VoiceVisualizer
+  controls={recorderControls}
+  rounded={5}    // Border radius in pixels (default: 5)
+/>
+```
+
+<CodeGroup>
+
+```jsx Sharp Corners
+<VoiceVisualizer rounded={0} />
+```
+
+```jsx Slightly Rounded
+<VoiceVisualizer rounded={3} />
+```
+
+```jsx Very Rounded
+<VoiceVisualizer rounded={10} />
+```
+
+</CodeGroup>
+
+## Animation Settings
+
+### Animation Speed
+
+Control how fast the visualization updates:
+
+```jsx
+<VoiceVisualizer
+  controls={recorderControls}
+  speed={3}      // Integer from 1 to 6 (default: 3)
+                 // Higher number = slower animation
+/>
+```
+
+<Warning>
+The `speed` prop uses inverse values: higher numbers result in **slower** animations. For example:
+- `speed={1}` - Fastest
+- `speed={3}` - Normal (default)
+- `speed={6}` - Slowest
+</Warning>
+
+### Current Pick Animation
+
+Toggle animation of the current bar during recording:
+
+```jsx
+<VoiceVisualizer
+  controls={recorderControls}
+  animateCurrentPick={true}   // Default: true
+/>
+```
+
+When `true`, the current recording position bar will pulse or animate, making it easier to see the recording progress.
+
+## Display Modes
+
+### Fullscreen Mode
+
+Expand visualization from the center:
+
+```jsx
+<VoiceVisualizer
+  controls={recorderControls}
+  fullscreen={true}   // Default: false
+/>
+```
+
+When enabled, the visualization grows from the center outwards, creating a symmetrical effect.
+
+### Recording-Only Mode
+
+Show visualization only during recording:
+
+```jsx
+<VoiceVisualizer
+  controls={recorderControls}
+  onlyRecording={true}   // Default: false
+/>
+```
+
+When `true`, the visualization disappears after recording stops, useful for minimal interfaces.
+
+## Complete Customization Examples
+
+### Modern Blue Theme
+
+```jsx
+import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
+
+function App() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      height={250}
+      width="100%"
+      backgroundColor="#0f172a"
+      mainBarColor="#3b82f6"
+      secondaryBarColor="#1e293b"
+      barWidth={3}
+      gap={2}
+      rounded={8}
+      speed={2}
+      animateCurrentPick={true}
+    />
+  );
+}
+```
+
+### Retro Neon Style
+
+```jsx
+<VoiceVisualizer
+  controls={recorderControls}
+  height={200}
+  width="100%"
+  backgroundColor="#000000"
+  mainBarColor="#ff00ff"
+  secondaryBarColor="#4a0e4e"
+  barWidth={4}
+  gap={1}
+  rounded={0}
+  speed={1}
+  animateCurrentPick={true}
+  fullscreen={true}
+/>
+```
+
+### Minimal Clean Design
+
+```jsx
+<VoiceVisualizer
+  controls={recorderControls}
+  height={150}
+  width="600px"
+  backgroundColor="transparent"
+  mainBarColor="#1f2937"
+  secondaryBarColor="#d1d5db"
+  barWidth={2}
+  gap={2}
+  rounded={12}
+  speed={3}
+  animateCurrentPick={false}
+/>
+```
+
+### Vibrant Gradient Effect
+
+```jsx
+<VoiceVisualizer
+  controls={recorderControls}
+  height={300}
+  width="100%"
+  backgroundColor="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+  mainBarColor="#fbbf24"
+  secondaryBarColor="#8b5cf6"
+  barWidth={5}
+  gap={3}
+  rounded={6}
+  speed={2}
+  animateCurrentPick={true}
+  fullscreen={true}
+/>
+```
+
+## Custom Styling with CSS Classes
+
+For advanced styling, use the className props:
+
+```jsx
+<VoiceVisualizer
+  controls={recorderControls}
+  mainContainerClassName="custom-visualizer"
+  canvasContainerClassName="custom-canvas"
+  controlButtonsClassName="custom-buttons"
+/>
+```
+
+Then in your CSS:
+
+```css
+.custom-visualizer {
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.custom-canvas {
+  border: 2px solid #e5e7eb;
+}
+
+.custom-buttons {
+  background-color: #3b82f6;
+  color: white;
+  border-radius: 8px;
+  padding: 8px 16px;
+}
+```
+
+## Responsive Design
+
+Create responsive visualizations using CSS units:
+
+```jsx
+function ResponsiveVisualizer() {
+  const recorderControls = useVoiceVisualizer();
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      height={isMobile ? 150 : 250}
+      width="100%"
+      barWidth={isMobile ? 2 : 3}
+      gap={isMobile ? 1 : 2}
+    />
+  );
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Custom UI" icon="wand-magic-sparkles" href="/guides/custom-ui">
+    Build completely custom interfaces
+  </Card>
+  <Card title="API Reference" icon="book" href="/api-reference/component">
+    View all component props
+  </Card>
+</CardGroup>

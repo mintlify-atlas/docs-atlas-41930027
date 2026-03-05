@@ -1,0 +1,614 @@
+---
+title: VoiceVisualizer Component
+description: Complete props reference for the VoiceVisualizer component
+---
+
+The `VoiceVisualizer` component visualizes audio recording and playback with a customizable waveform display. It provides a complete UI with built-in controls or can be used headlessly with custom controls.
+
+## Import
+
+```typescript
+import { VoiceVisualizer } from "react-voice-visualizer";
+```
+
+## Basic Usage
+
+<CodeGroup>
+
+```typescript TypeScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function App() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      height={200}
+      width="100%"
+      mainBarColor="#4F46E5"
+      secondaryBarColor="#E0E7FF"
+    />
+  );
+}
+```
+
+```jsx JavaScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function App() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      height={200}
+      width="100%"
+      mainBarColor="#4F46E5"
+      secondaryBarColor="#E0E7FF"
+    />
+  );
+}
+```
+
+</CodeGroup>
+
+## Props
+
+### Required Props
+
+<ParamField path="controls" type="Controls" required>
+  Provides the audio recording controls and states required for visualization. This object is returned from the `useVoiceVisualizer` hook.
+  
+  See the [useVoiceVisualizer](/api/use-voice-visualizer) reference for details on the Controls object.
+</ParamField>
+
+### Dimension Props
+
+<ParamField path="height" type="string | number" default={200}>
+  The height of the visualization canvas. Can be specified as a number (pixels) or string with units (e.g., "200px", "50%").
+</ParamField>
+
+<ParamField path="width" type="string | number" default="100%">
+  The width of the visualization canvas. Can be specified as a number (pixels) or string with units (e.g., "400px", "100%").
+</ParamField>
+
+### Color Props
+
+<ParamField path="backgroundColor" type="string" default="transparent">
+  The background color of the visualization canvas. Accepts any valid CSS color value.
+</ParamField>
+
+<ParamField path="mainBarColor" type="string" default="#FFFFFF">
+  The color of the main audio wave bars. This color is used for the active/played portion of the waveform.
+</ParamField>
+
+<ParamField path="secondaryBarColor" type="string" default="#5e5e5e">
+  The secondary color of the audio wave bars. This color is used for the inactive/unplayed portion of the waveform.
+</ParamField>
+
+<ParamField path="defaultMicrophoneIconColor" type="string" default="mainBarColor">
+  The color of the default microphone icon shown before recording starts. Defaults to the same value as `mainBarColor`.
+</ParamField>
+
+<ParamField path="defaultAudioWaveIconColor" type="string" default="mainBarColor">
+  The color of the default audio wave icons shown before recording starts. Defaults to the same value as `mainBarColor`.
+</ParamField>
+
+### Waveform Visualization Props
+
+<ParamField path="barWidth" type="number" default={2}>
+  The width of each audio wave bar in pixels. Integer value.
+</ParamField>
+
+<ParamField path="gap" type="number" default={1}>
+  The gap between each audio wave bar. Integer value.
+</ParamField>
+
+<ParamField path="rounded" type="number" default={5}>
+  The border radius of the audio wave bars in pixels.
+</ParamField>
+
+<ParamField path="speed" type="number" default={3}>
+  The speed of the audio visualization animation. Integer from 1 to 6, where a higher number results in slower animation.
+</ParamField>
+
+<ParamField path="animateCurrentPick" type="boolean" default={true}>
+  Whether to animate the current bar being recorded in the visualization.
+</ParamField>
+
+<ParamField path="fullscreen" type="boolean" default={false}>
+  Whether the visualization should be displayed in fullscreen mode. When enabled, the waveform begins from the center and extends outward.
+</ParamField>
+
+### Control Panel Props
+
+<ParamField path="isControlPanelShown" type="boolean" default={true}>
+  Whether to display the audio control panel, including features such as recorded audio duration, current recording time, and control buttons.
+  
+  If you want to create your own UI, set this to `false` and utilize functions from the `useVoiceVisualizer` hook to manage audio control.
+</ParamField>
+
+<ParamField path="isDownloadAudioButtonShown" type="boolean" default={false}>
+  Whether to display the Download audio button in the control panel.
+</ParamField>
+
+### Behavior Props
+
+<ParamField path="onlyRecording" type="boolean" default={false}>
+  Whether to show the visualization only during voice recording. When set to `true`, the waveform is cleared after recording stops.
+</ParamField>
+
+<ParamField path="isDefaultUIShown" type="boolean" default={true}>
+  Whether to show a default UI on the canvas before recording starts (microphone icon and audio wave icons).
+  
+  If you want to create your own UI, set this to `false`.
+</ParamField>
+
+### Progress Indicator Props
+
+<ParamField path="isProgressIndicatorShown" type="boolean" default={true}>
+  Whether to show the progress indicator after recording. Automatically set to `false` when `onlyRecording` is `true`.
+</ParamField>
+
+<ParamField path="isProgressIndicatorTimeShown" type="boolean" default={true}>
+  Whether to show the time label on the progress indicator.
+</ParamField>
+
+<ParamField path="isProgressIndicatorOnHoverShown" type="boolean" default={true}>
+  Whether to show the hover progress indicator when hovering over the recorded audio waveform. Automatically set to `false` when `onlyRecording` is `true`.
+</ParamField>
+
+<ParamField path="isProgressIndicatorTimeOnHoverShown" type="boolean" default={true}>
+  Whether to show the time label on the hover progress indicator.
+</ParamField>
+
+<ParamField path="isAudioProcessingTextShown" type="boolean" default={true}>
+  Whether to show the "Processing Audio..." text while audio is being processed.
+</ParamField>
+
+### Custom Styling Props
+
+<ParamField path="mainContainerClassName" type="string">
+  Custom CSS class name for the main container element.
+</ParamField>
+
+<ParamField path="canvasContainerClassName" type="string">
+  Custom CSS class name for the container of the visualization canvas.
+</ParamField>
+
+<ParamField path="progressIndicatorClassName" type="string">
+  Custom CSS class name for the progress indicator.
+</ParamField>
+
+<ParamField path="progressIndicatorTimeClassName" type="string">
+  Custom CSS class name for the progress indicator time label.
+</ParamField>
+
+<ParamField path="progressIndicatorOnHoverClassName" type="string">
+  Custom CSS class name for the progress indicator shown on hover.
+</ParamField>
+
+<ParamField path="progressIndicatorTimeOnHoverClassName" type="string">
+  Custom CSS class name for the progress indicator time label shown on hover.
+</ParamField>
+
+<ParamField path="audioProcessingTextClassName" type="string">
+  Custom CSS class name for the "Processing Audio..." text.
+</ParamField>
+
+<ParamField path="controlButtonsClassName" type="string">
+  Custom CSS class name for the Clear Button and Download Audio button components.
+</ParamField>
+
+## Examples
+
+### Minimal Setup
+
+<CodeGroup>
+
+```typescript TypeScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function MinimalRecorder() {
+  const recorderControls = useVoiceVisualizer();
+
+  return <VoiceVisualizer controls={recorderControls} />;
+}
+```
+
+```jsx JavaScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function MinimalRecorder() {
+  const recorderControls = useVoiceVisualizer();
+
+  return <VoiceVisualizer controls={recorderControls} />;
+}
+```
+
+</CodeGroup>
+
+### Custom Colors and Dimensions
+
+<CodeGroup>
+
+```typescript TypeScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function CustomStyledRecorder() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      height={300}
+      width="600px"
+      backgroundColor="#1F2937"
+      mainBarColor="#10B981"
+      secondaryBarColor="#6B7280"
+      barWidth={3}
+      gap={2}
+      rounded={8}
+    />
+  );
+}
+```
+
+```jsx JavaScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function CustomStyledRecorder() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      height={300}
+      width="600px"
+      backgroundColor="#1F2937"
+      mainBarColor="#10B981"
+      secondaryBarColor="#6B7280"
+      barWidth={3}
+      gap={2}
+      rounded={8}
+    />
+  );
+}
+```
+
+</CodeGroup>
+
+### Recording Only Mode
+
+<CodeGroup>
+
+```typescript TypeScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function RecordingOnlyMode() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      onlyRecording={true}
+      mainBarColor="#EF4444"
+      animateCurrentPick={true}
+    />
+  );
+}
+```
+
+```jsx JavaScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function RecordingOnlyMode() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      onlyRecording={true}
+      mainBarColor="#EF4444"
+      animateCurrentPick={true}
+    />
+  );
+}
+```
+
+</CodeGroup>
+
+### Custom Controls with Hidden Default UI
+
+<CodeGroup>
+
+```typescript TypeScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function CustomControlsRecorder() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <div>
+      <VoiceVisualizer
+        controls={recorderControls}
+        isControlPanelShown={false}
+        isDefaultUIShown={false}
+        height={150}
+        backgroundColor="#F3F4F6"
+        mainBarColor="#8B5CF6"
+        secondaryBarColor="#DDD6FE"
+      />
+      
+      {/* Your custom control UI */}
+      <div className="custom-controls">
+        <button onClick={recorderControls.startRecording}>
+          Start Recording
+        </button>
+        <button onClick={recorderControls.stopRecording}>
+          Stop
+        </button>
+        <button onClick={recorderControls.togglePauseResume}>
+          {recorderControls.isPausedRecording ? "Resume" : "Pause"}
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+```jsx JavaScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function CustomControlsRecorder() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <div>
+      <VoiceVisualizer
+        controls={recorderControls}
+        isControlPanelShown={false}
+        isDefaultUIShown={false}
+        height={150}
+        backgroundColor="#F3F4F6"
+        mainBarColor="#8B5CF6"
+        secondaryBarColor="#DDD6FE"
+      />
+      
+      {/* Your custom control UI */}
+      <div className="custom-controls">
+        <button onClick={recorderControls.startRecording}>
+          Start Recording
+        </button>
+        <button onClick={recorderControls.stopRecording}>
+          Stop
+        </button>
+        <button onClick={recorderControls.togglePauseResume}>
+          {recorderControls.isPausedRecording ? "Resume" : "Pause"}
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+</CodeGroup>
+
+### Custom CSS Classes
+
+<CodeGroup>
+
+```typescript TypeScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+import "./custom-audio-styles.css";
+
+function StyledRecorder() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      mainContainerClassName="my-audio-container"
+      canvasContainerClassName="my-canvas-wrapper"
+      progressIndicatorClassName="my-progress"
+      progressIndicatorTimeClassName="my-time-label"
+      controlButtonsClassName="my-buttons"
+    />
+  );
+}
+```
+
+```jsx JavaScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+import "./custom-audio-styles.css";
+
+function StyledRecorder() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      mainContainerClassName="my-audio-container"
+      canvasContainerClassName="my-canvas-wrapper"
+      progressIndicatorClassName="my-progress"
+      progressIndicatorTimeClassName="my-time-label"
+      controlButtonsClassName="my-buttons"
+    />
+  );
+}
+```
+
+</CodeGroup>
+
+```css custom-audio-styles.css
+.my-audio-container {
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.my-canvas-wrapper {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.my-progress {
+  background-color: #4F46E5;
+}
+
+.my-time-label {
+  font-family: monospace;
+  font-weight: bold;
+}
+
+.my-buttons {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+```
+
+### Fullscreen Visualization
+
+<CodeGroup>
+
+```typescript TypeScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function FullscreenRecorder() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      fullscreen={true}
+      height={400}
+      width="100%"
+      mainBarColor="#F59E0B"
+      secondaryBarColor="#FEF3C7"
+      backgroundColor="#1F2937"
+    />
+  );
+}
+```
+
+```jsx JavaScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function FullscreenRecorder() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      fullscreen={true}
+      height={400}
+      width="100%"
+      mainBarColor="#F59E0B"
+      secondaryBarColor="#FEF3C7"
+      backgroundColor="#1F2937"
+    />
+  );
+}
+```
+
+</CodeGroup>
+
+<Tip>
+  When using `fullscreen` mode, the visualization begins from the center and extends outward symmetrically, creating a more immersive visual effect.
+</Tip>
+
+### With Download Button
+
+<CodeGroup>
+
+```typescript TypeScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function RecorderWithDownload() {
+  const recorderControls = useVoiceVisualizer({
+    onStopRecording: () => {
+      console.log("Recording saved");
+    },
+  });
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      isDownloadAudioButtonShown={true}
+      mainBarColor="#3B82F6"
+      secondaryBarColor="#BFDBFE"
+    />
+  );
+}
+```
+
+```jsx JavaScript
+import { VoiceVisualizer, useVoiceVisualizer } from "react-voice-visualizer";
+
+function RecorderWithDownload() {
+  const recorderControls = useVoiceVisualizer({
+    onStopRecording: () => {
+      console.log("Recording saved");
+    },
+  });
+
+  return (
+    <VoiceVisualizer
+      controls={recorderControls}
+      isDownloadAudioButtonShown={true}
+      mainBarColor="#3B82F6"
+      secondaryBarColor="#BFDBFE"
+    />
+  );
+}
+```
+
+</CodeGroup>
+
+<Warning>
+  The built-in download functionality saves audio in WebM format. To convert to other formats, use external libraries like FFmpeg.
+</Warning>
+
+## Visual Effects
+
+### Bar Width and Gap
+
+The `barWidth` and `gap` props control the density of the waveform:
+- **Smaller values** (e.g., `barWidth={1}`, `gap={0}`) create a denser, more detailed waveform
+- **Larger values** (e.g., `barWidth={4}`, `gap={3}`) create a sparser, more stylized look
+
+### Animation Speed
+
+The `speed` prop affects how frequently the visualization updates:
+- `speed={1}` - Updates every frame (fastest)
+- `speed={3}` - Updates every 3 frames (default, balanced)
+- `speed={6}` - Updates every 6 frames (slowest, least resource-intensive)
+
+### Rounded Corners
+
+The `rounded` prop applies border-radius to each bar:
+- `rounded={0}` - Sharp rectangular bars
+- `rounded={5}` - Slightly rounded (default)
+- `rounded={10}` - Very rounded, pill-shaped bars
+
+## Styling with CSS Classes
+
+All `className` props accept custom CSS classes that will be applied to their respective elements. This allows you to:
+
+- Override default styles
+- Add custom animations
+- Integrate with CSS frameworks like Tailwind CSS
+- Apply responsive styles with media queries
+
+<Tip>
+  Use browser DevTools to inspect the component and see the default class names, which can help you understand the component structure when writing custom styles.
+</Tip>
+
+## See Also
+
+- [useVoiceVisualizer Hook](/api/use-voice-visualizer) - Hook that provides the controls
+- [Types](/api/types) - TypeScript interface definitions
+- [Customization Guide](/guides/customization) - Advanced styling techniques
+- [Custom UI Guide](/guides/custom-ui) - Building custom UI controls

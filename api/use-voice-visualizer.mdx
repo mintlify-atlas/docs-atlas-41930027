@@ -1,0 +1,512 @@
+---
+title: useVoiceVisualizer Hook
+description: Complete API reference for the useVoiceVisualizer hook
+---
+
+The `useVoiceVisualizer` hook provides comprehensive controls and state management for audio recording and visualization. It handles microphone access, audio recording, playback, and provides formatted time values for display.
+
+## Import
+
+```typescript
+import { useVoiceVisualizer } from "react-voice-visualizer";
+```
+
+## Basic Usage
+
+<CodeGroup>
+
+```typescript TypeScript
+import { useVoiceVisualizer } from "react-voice-visualizer";
+
+function AudioRecorder() {
+  const recorderControls = useVoiceVisualizer({
+    onStartRecording: () => console.log("Recording started"),
+    onStopRecording: () => console.log("Recording stopped"),
+  });
+
+  return <VoiceVisualizer controls={recorderControls} />;
+}
+```
+
+```jsx JavaScript
+import { useVoiceVisualizer } from "react-voice-visualizer";
+
+function AudioRecorder() {
+  const recorderControls = useVoiceVisualizer({
+    onStartRecording: () => console.log("Recording started"),
+    onStopRecording: () => console.log("Recording stopped"),
+  });
+
+  return <VoiceVisualizer controls={recorderControls} />;
+}
+```
+
+</CodeGroup>
+
+## Parameters
+
+All parameters are optional and can be passed as an object to the hook.
+
+<ParamField path="onStartRecording" type="() => void">
+  Callback function triggered when recording starts.
+</ParamField>
+
+<ParamField path="onStopRecording" type="() => void">
+  Callback function triggered when recording stops.
+</ParamField>
+
+<ParamField path="onPausedRecording" type="() => void">
+  Callback function triggered when recording is paused.
+</ParamField>
+
+<ParamField path="onResumedRecording" type="() => void">
+  Callback function triggered when recording is resumed.
+</ParamField>
+
+<ParamField path="onClearCanvas" type="() => void">
+  Callback function triggered when the canvas is cleared.
+</ParamField>
+
+<ParamField path="onEndAudioPlayback" type="() => void">
+  Callback function triggered when audio playback ends.
+</ParamField>
+
+<ParamField path="onStartAudioPlayback" type="() => void">
+  Callback function triggered when audio playback starts.
+</ParamField>
+
+<ParamField path="onPausedAudioPlayback" type="() => void">
+  Callback function triggered when audio playback is paused.
+</ParamField>
+
+<ParamField path="onResumedAudioPlayback" type="() => void">
+  Callback function triggered when audio playback is resumed.
+</ParamField>
+
+<ParamField path="onErrorPlayingAudio" type="(error: Error) => void">
+  Callback function invoked when an error occurs during the execution of `audio.play()`. It provides an opportunity to handle and respond to such errors.
+</ParamField>
+
+<ParamField path="shouldHandleBeforeUnload" type="boolean" default="true">
+  Determines whether the `beforeunload` event handler should be added to the window, preventing page unload if necessary.
+</ParamField>
+
+## Return Values
+
+The hook returns a `Controls` object containing state values, functions, refs, and formatted values.
+
+### State Values
+
+<ResponseField name="isRecordingInProgress" type="boolean">
+  Indicates if audio recording is currently in progress.
+</ResponseField>
+
+<ResponseField name="isPausedRecording" type="boolean">
+  Indicates if audio recording is currently paused.
+</ResponseField>
+
+<ResponseField name="audioData" type="Uint8Array">
+  Audio data for real-time visualization during recording.
+</ResponseField>
+
+<ResponseField name="recordingTime" type="number">
+  Elapsed time during recording in milliseconds.
+</ResponseField>
+
+<ResponseField name="duration" type="number">
+  Duration of the recorded audio in seconds.
+</ResponseField>
+
+<ResponseField name="currentAudioTime" type="number">
+  Current playback time of the recorded audio in seconds.
+</ResponseField>
+
+<ResponseField name="audioSrc" type="string">
+  Source URL of the recorded audio file for playback.
+</ResponseField>
+
+<ResponseField name="isPausedRecordedAudio" type="boolean">
+  Indicates if recorded audio playback is paused.
+</ResponseField>
+
+<ResponseField name="isProcessingRecordedAudio" type="boolean">
+  Indicates if the recorded audio is being processed and 'Processing Audio...' text is shown.
+</ResponseField>
+
+<ResponseField name="isCleared" type="boolean">
+  Indicates if the canvas has been cleared.
+</ResponseField>
+
+<ResponseField name="isAvailableRecordedAudio" type="boolean">
+  Indicates whether recorded audio is available and not currently being processed. This return value can be used to check if it's an appropriate time to work with recorded audio data in your application.
+</ResponseField>
+
+<ResponseField name="recordedBlob" type="Blob | null">
+  Recorded audio data in Blob format.
+</ResponseField>
+
+<ResponseField name="bufferFromRecordedBlob" type="AudioBuffer | null">
+  Audio buffer from the recorded Blob.
+</ResponseField>
+
+<ResponseField name="error" type="Error | null">
+  Error object if any error occurred during recording or playback.
+</ResponseField>
+
+<ResponseField name="isProcessingOnResize" type="boolean">
+  Indicates whether audio processing is occurring during a resize event when audio is recorded and a blob is present.
+</ResponseField>
+
+<ResponseField name="isProcessingStartRecording" type="boolean">
+  When set to `true`, it indicates that the start recording button has been pressed, but either the permission to record has not yet been granted or the recording itself has not yet commenced. This prop serves as a helpful flag to manage the state of the recording process, allowing components to react accordingly to the current stage of recording initiation.
+</ResponseField>
+
+<ResponseField name="isPreloadedBlob" type="boolean">
+  This property indicates whether a preloaded audio blob is available for playback or processing.
+</ResponseField>
+
+<ResponseField name="mediaRecorder" type="MediaRecorder | null">
+  MediaRecorder instance used for recording audio.
+</ResponseField>
+
+### Formatted Values
+
+<ResponseField name="formattedDuration" type="string">
+  Formatted duration time in format `09:51m`.
+</ResponseField>
+
+<ResponseField name="formattedRecordingTime" type="string">
+  Formatted recording current time in format `09:51`.
+</ResponseField>
+
+<ResponseField name="formattedRecordedAudioCurrentTime" type="string">
+  Formatted recorded audio current time in format `09:51:1`.
+</ResponseField>
+
+### Functions
+
+<ResponseField name="startRecording" type="() => void">
+  Function to start audio recording. Requests microphone permission if not already granted.
+</ResponseField>
+
+<ResponseField name="stopRecording" type="() => void">
+  Function to stop audio recording.
+</ResponseField>
+
+<ResponseField name="togglePauseResume" type="() => void">
+  Function to toggle pause/resume during recording and playback of recorded audio.
+</ResponseField>
+
+<ResponseField name="startAudioPlayback" type="() => void">
+  Function to start/resume playback of recorded audio.
+</ResponseField>
+
+<ResponseField name="stopAudioPlayback" type="() => void">
+  Function to pause playback of recorded audio.
+</ResponseField>
+
+<ResponseField name="saveAudioFile" type="() => void">
+  This function allows you to save the recorded audio as a `webm` file format. Please note that it supports saving audio only in the webm format. If you need to save the audio in a different format, you can use external libraries like `FFmpeg` to convert the Blob to your desired format. This flexibility allows you to tailor the output format according to your specific needs.
+</ResponseField>
+
+<ResponseField name="clearCanvas" type="() => void">
+  Function to clear the visualization canvas and reset all states.
+</ResponseField>
+
+<ResponseField name="setCurrentAudioTime" type="Dispatch<SetStateAction<number>>">
+  Internal function to handle current audio time updates during playback.
+</ResponseField>
+
+<ResponseField name="setPreloadedAudioBlob" type="(blob: Blob) => void">
+  Users can use this method to set a preloaded audio blob, enabling seamless integration with user inputs, file uploads, etc.
+</ResponseField>
+
+### Refs
+
+<ResponseField name="audioRef" type="MutableRefObject<HTMLAudioElement | null>">
+  Reference to the audio element used for playback.
+</ResponseField>
+
+### Internal Functions
+
+<Warning>
+  Functions prefixed with `_` are internal and should not be used directly in most cases.
+</Warning>
+
+<ResponseField name="_setIsProcessingAudioOnComplete" type="Dispatch<SetStateAction<boolean>>">
+  Internal function to set `isProcessingAudioOnComplete` state.
+</ResponseField>
+
+<ResponseField name="_setIsProcessingOnResize" type="Dispatch<SetStateAction<boolean>>">
+  Internal function to set `isProcessingOnResize` state.
+</ResponseField>
+
+## Examples
+
+### Callback Lifecycle
+
+<CodeGroup>
+
+```typescript TypeScript
+import { useVoiceVisualizer } from "react-voice-visualizer";
+
+function AudioRecorder() {
+  const recorderControls = useVoiceVisualizer({
+    onStartRecording: () => {
+      console.log("Recording started");
+      // Update UI, send analytics, etc.
+    },
+    onPausedRecording: () => {
+      console.log("Recording paused");
+    },
+    onResumedRecording: () => {
+      console.log("Recording resumed");
+    },
+    onStopRecording: () => {
+      console.log("Recording stopped");
+      // Process the recorded blob
+    },
+    onStartAudioPlayback: () => {
+      console.log("Playback started");
+    },
+    onPausedAudioPlayback: () => {
+      console.log("Playback paused");
+    },
+    onResumedAudioPlayback: () => {
+      console.log("Playback resumed");
+    },
+    onEndAudioPlayback: () => {
+      console.log("Playback ended");
+    },
+    onErrorPlayingAudio: (error) => {
+      console.error("Audio playback error:", error);
+      // Show error to user
+    },
+  });
+
+  return <VoiceVisualizer controls={recorderControls} />;
+}
+```
+
+```jsx JavaScript
+import { useVoiceVisualizer } from "react-voice-visualizer";
+
+function AudioRecorder() {
+  const recorderControls = useVoiceVisualizer({
+    onStartRecording: () => {
+      console.log("Recording started");
+      // Update UI, send analytics, etc.
+    },
+    onPausedRecording: () => {
+      console.log("Recording paused");
+    },
+    onResumedRecording: () => {
+      console.log("Recording resumed");
+    },
+    onStopRecording: () => {
+      console.log("Recording stopped");
+      // Process the recorded blob
+    },
+    onStartAudioPlayback: () => {
+      console.log("Playback started");
+    },
+    onPausedAudioPlayback: () => {
+      console.log("Playback paused");
+    },
+    onResumedAudioPlayback: () => {
+      console.log("Playback resumed");
+    },
+    onEndAudioPlayback: () => {
+      console.log("Playback ended");
+    },
+    onErrorPlayingAudio: (error) => {
+      console.error("Audio playback error:", error);
+      // Show error to user
+    },
+  });
+
+  return <VoiceVisualizer controls={recorderControls} />;
+}
+```
+
+</CodeGroup>
+
+### Custom Controls
+
+<CodeGroup>
+
+```typescript TypeScript
+import { useVoiceVisualizer } from "react-voice-visualizer";
+
+function CustomAudioRecorder() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <div>
+      <VoiceVisualizer 
+        controls={recorderControls} 
+        isControlPanelShown={false}
+      />
+      
+      {/* Custom control buttons */}
+      <button 
+        onClick={recorderControls.startRecording}
+        disabled={recorderControls.isRecordingInProgress}
+      >
+        Start Recording
+      </button>
+      
+      <button 
+        onClick={recorderControls.togglePauseResume}
+        disabled={!recorderControls.isRecordingInProgress}
+      >
+        {recorderControls.isPausedRecording ? "Resume" : "Pause"}
+      </button>
+      
+      <button 
+        onClick={recorderControls.stopRecording}
+        disabled={!recorderControls.isRecordingInProgress}
+      >
+        Stop Recording
+      </button>
+      
+      <button 
+        onClick={recorderControls.clearCanvas}
+        disabled={recorderControls.isCleared}
+      >
+        Clear
+      </button>
+      
+      {recorderControls.isRecordingInProgress && (
+        <p>Recording: {recorderControls.formattedRecordingTime}</p>
+      )}
+      
+      {recorderControls.isAvailableRecordedAudio && (
+        <p>Duration: {recorderControls.formattedDuration}</p>
+      )}
+    </div>
+  );
+}
+```
+
+```jsx JavaScript
+import { useVoiceVisualizer } from "react-voice-visualizer";
+
+function CustomAudioRecorder() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <div>
+      <VoiceVisualizer 
+        controls={recorderControls} 
+        isControlPanelShown={false}
+      />
+      
+      {/* Custom control buttons */}
+      <button 
+        onClick={recorderControls.startRecording}
+        disabled={recorderControls.isRecordingInProgress}
+      >
+        Start Recording
+      </button>
+      
+      <button 
+        onClick={recorderControls.togglePauseResume}
+        disabled={!recorderControls.isRecordingInProgress}
+      >
+        {recorderControls.isPausedRecording ? "Resume" : "Pause"}
+      </button>
+      
+      <button 
+        onClick={recorderControls.stopRecording}
+        disabled={!recorderControls.isRecordingInProgress}
+      >
+        Stop Recording
+      </button>
+      
+      <button 
+        onClick={recorderControls.clearCanvas}
+        disabled={recorderControls.isCleared}
+      >
+        Clear
+      </button>
+      
+      {recorderControls.isRecordingInProgress && (
+        <p>Recording: {recorderControls.formattedRecordingTime}</p>
+      )}
+      
+      {recorderControls.isAvailableRecordedAudio && (
+        <p>Duration: {recorderControls.formattedDuration}</p>
+      )}
+    </div>
+  );
+}
+```
+
+</CodeGroup>
+
+### Preloading Audio
+
+<CodeGroup>
+
+```typescript TypeScript
+import { useVoiceVisualizer } from "react-voice-visualizer";
+import { useEffect } from "react";
+
+function PreloadedAudio({ audioBlob }: { audioBlob: Blob }) {
+  const recorderControls = useVoiceVisualizer();
+
+  useEffect(() => {
+    if (audioBlob) {
+      recorderControls.setPreloadedAudioBlob(audioBlob);
+    }
+  }, [audioBlob]);
+
+  return (
+    <div>
+      <VoiceVisualizer controls={recorderControls} />
+      
+      {recorderControls.isPreloadedBlob && (
+        <p>Preloaded audio ready for playback</p>
+      )}
+    </div>
+  );
+}
+```
+
+```jsx JavaScript
+import { useVoiceVisualizer } from "react-voice-visualizer";
+import { useEffect } from "react";
+
+function PreloadedAudio({ audioBlob }) {
+  const recorderControls = useVoiceVisualizer();
+
+  useEffect(() => {
+    if (audioBlob) {
+      recorderControls.setPreloadedAudioBlob(audioBlob);
+    }
+  }, [audioBlob]);
+
+  return (
+    <div>
+      <VoiceVisualizer controls={recorderControls} />
+      
+      {recorderControls.isPreloadedBlob && (
+        <p>Preloaded audio ready for playback</p>
+      )}
+    </div>
+  );
+}
+```
+
+</CodeGroup>
+
+<Tip>
+  For a complete list of TypeScript types, see the [Types](/api/types) reference.
+</Tip>
+
+## See Also
+
+- [VoiceVisualizer Component](/api/voice-visualizer-component) - Component that uses these controls
+- [Types](/api/types) - TypeScript interface definitions
+- [Custom UI Guide](/guides/custom-ui) - Building custom UI controls

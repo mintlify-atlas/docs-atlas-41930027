@@ -1,0 +1,494 @@
+---
+title: Error Handling
+description: Handle errors gracefully in your audio recording application
+---
+
+## Overview
+
+Robust error handling is essential for providing a good user experience. The React Voice Visualizer library provides error states and callbacks to help you handle various error scenarios that can occur during recording and playback.
+
+## The Error State
+
+The hook returns an `error` state that contains any errors that occur:
+
+```jsx
+import { useEffect } from "react";
+import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
+
+function App() {
+  const recorderControls = useVoiceVisualizer();
+  const { error } = recorderControls;
+
+  useEffect(() => {
+    if (!error) return;
+
+    // Handle the error
+    console.error('Error:', error.message);
+    alert(`An error occurred: ${error.message}`);
+  }, [error]);
+
+  return <VoiceVisualizer controls={recorderControls} />;
+}
+```
+
+<Note>
+When an error occurs, the library automatically calls `clearCanvas()` to reset the visualizer state.
+</Note>
+
+## Common Error Scenarios
+
+### Microphone Permission Denied
+
+The most common error occurs when users deny microphone access:
+
+```jsx
+import { useEffect } from "react";
+import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
+
+function RecorderWithPermissionHandling() {
+  const recorderControls = useVoiceVisualizer();
+  const { error, startRecording } = recorderControls;
+
+  useEffect(() => {
+    if (!error) return;
+
+    // Check if it's a permission error
+    if (error.message.includes('Permission') || 
+        error.message.includes('denied') ||
+        error.name === 'NotAllowedError') {
+      // Show user-friendly message
+      alert(
+        'Microphone access is required to record audio. ' +
+        'Please enable microphone permissions in your browser settings.'
+      );
+    }
+  }, [error]);
+
+  return (
+    <div>
+      <VoiceVisualizer controls={recorderControls} />
+      {error && (
+        <div style={{ color: 'red', marginTop: '10px' }}>
+          Unable to access microphone. Please check your permissions.
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+<Warning>
+Browser microphone permissions are required for recording. Always provide clear instructions to users on how to enable permissions if they're denied.
+</Warning>
+
+### No Audio Device Available
+
+This error occurs when the user's device has no microphone:
+
+```jsx
+useEffect(() => {
+  if (!error) return;
+
+  if (error.message.includes('Requested device not found') ||
+      error.name === 'NotFoundError') {
+    alert(
+      'No microphone found. Please connect a microphone and try again.'
+    );
+  }
+}, [error]);
+```
+
+### Audio Processing Errors
+
+Errors can occur when processing recorded audio:
+
+```jsx
+useEffect(() => {
+  if (!error) return;
+
+  if (error.message.includes('processing the audio blob') ||
+      error.message.includes('audio blob is empty')) {
+    alert(
+      'Failed to process the recording. Please try recording again.'
+    );
+  }
+}, [error]);
+```
+
+## Playback Error Callback
+
+Use the `onErrorPlayingAudio` callback to handle errors during audio playback:
+
+<CodeGroup>
+
+```tsx TypeScript
+import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
+
+function App() {
+  const recorderControls = useVoiceVisualizer({
+    onErrorPlayingAudio: (error: Error) => {
+      console.error('Playback error:', error);
+      
+      // Show user-friendly message
+      if (error.message.includes('decode')) {
+        alert('The audio file is corrupted and cannot be played.');
+      } else {
+        alert('Unable to play audio. Please try again.');
+      }
+    },
+  });
+
+  return <VoiceVisualizer controls={recorderControls} />;
+}
+```
+
+```jsx JavaScript
+import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
+
+function App() {
+  const recorderControls = useVoiceVisualizer({
+    onErrorPlayingAudio: (error) => {
+      console.error('Playback error:', error);
+      alert('Unable to play audio. Please try again.');
+    },
+  });
+
+  return <VoiceVisualizer controls={recorderControls} />;
+}
+```
+
+</CodeGroup>
+
+## Complete Error Handling Example
+
+Here's a comprehensive example with proper error handling:
+
+```tsx
+import { useEffect, useState } from "react";
+import { useVoiceVisualizer, VoiceVisualizer } from "react-voice-visualizer";
+
+function RobustRecorder() {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const recorderControls = useVoiceVisualizer({
+    onStartRecording: () => {
+      setErrorMessage(null); // Clear previous errors
+    },
+    onErrorPlayingAudio: (error: Error) => {
+      setErrorMessage(`Playback error: ${error.message}`);
+    },
+  });
+
+  const { error, startRecording, clearCanvas } = recorderControls;
+
+  useEffect(() => {
+    if (!error) {
+      setErrorMessage(null);
+      return;
+    }
+
+    // Categorize and handle different error types
+    let message: string;
+
+    if (error.name === 'NotAllowedError' || error.message.includes('Permission')) {
+      message = 'Microphone access denied. Please enable permissions and try again.';
+    } else if (error.name === 'NotFoundError') {
+      message = 'No microphone found. Please connect a microphone.';
+    } else if (error.message.includes('audio blob is empty')) {
+      message = 'Recording failed. The audio file is empty.';
+    } else if (error.message.includes('processing')) {
+      message = 'Failed to process the recording. Please try again.';
+    } else {
+      message = `An error occurred: ${error.message}`;
+    }
+
+    setErrorMessage(message);
+  }, [error]);
+
+  const handleStartRecording = () => {
+    setErrorMessage(null);
+    startRecording();
+  };
+
+  const handleClearError = () => {
+    setErrorMessage(null);
+    clearCanvas();
+  };
+
+  return (
+    <div>
+      <VoiceVisualizer controls={recorderControls} />
+
+      {errorMessage && (
+        <div style={{
+          padding: '12px',
+          backgroundColor: '#fef2f2',
+          border: '1px solid #fecaca',
+          borderRadius: '6px',
+          color: '#991b1b',
+          marginTop: '12px',
+        }}>
+          <strong>Error:</strong> {errorMessage}
+          <button
+            onClick={handleClearError}
+            style={{ marginLeft: '12px' }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {!errorMessage && (
+        <button onClick={handleStartRecording}>
+          Start Recording
+        </button>
+      )}
+    </div>
+  );
+}
+```
+
+## Error Recovery Patterns
+
+### Automatic Retry
+
+```jsx
+function RecorderWithRetry() {
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
+
+  const recorderControls = useVoiceVisualizer();
+  const { error, startRecording, clearCanvas } = recorderControls;
+
+  useEffect(() => {
+    if (!error || retryCount >= MAX_RETRIES) return;
+
+    // Auto-retry after 2 seconds
+    const timeout = setTimeout(() => {
+      console.log(`Retrying... (${retryCount + 1}/${MAX_RETRIES})`);
+      clearCanvas();
+      startRecording();
+      setRetryCount(prev => prev + 1);
+    }, 2000);
+
+    return () => clearTimeout(timeout);
+  }, [error, retryCount]);
+
+  return <VoiceVisualizer controls={recorderControls} />;
+}
+```
+
+### Fallback UI
+
+```jsx
+function RecorderWithFallback() {
+  const recorderControls = useVoiceVisualizer();
+  const { error } = recorderControls;
+
+  if (error && error.name === 'NotAllowedError') {
+    return (
+      <div>
+        <h3>Microphone Access Required</h3>
+        <p>This app needs microphone access to record audio.</p>
+        <ol>
+          <li>Click the lock icon in your browser's address bar</li>
+          <li>Enable microphone permissions</li>
+          <li>Refresh the page</li>
+        </ol>
+        <button onClick={() => window.location.reload()}>
+          Refresh Page
+        </button>
+      </div>
+    );
+  }
+
+  return <VoiceVisualizer controls={recorderControls} />;
+}
+```
+
+## Error Types Reference
+
+<Accordion title="Common Error Types">
+
+| Error Name | Description | Common Cause |
+|------------|-------------|-------------|
+| `NotAllowedError` | Permission denied | User denied microphone access |
+| `NotFoundError` | Device not found | No microphone connected |
+| `NotReadableError` | Hardware error | Microphone in use by another app |
+| `OverconstrainedError` | Constraints not satisfied | Requested audio settings not supported |
+| `TypeError` | Invalid operation | Attempting to use audio before it's ready |
+
+</Accordion>
+
+## Best Practices
+
+<Steps>
+
+<Step title="Always Monitor the Error State">
+  Use `useEffect` to watch for errors and respond appropriately:
+  
+  ```jsx
+  useEffect(() => {
+    if (!error) return;
+    // Handle error
+  }, [error]);
+  ```
+</Step>
+
+<Step title="Provide Clear Error Messages">
+  Don't show technical error messages to users. Translate them into actionable instructions:
+  
+  ```jsx
+  // ❌ Bad
+  alert(error.message); // "NotAllowedError: Permission denied"
+  
+  // ✅ Good
+  alert('Please enable microphone access in your browser settings.');
+  ```
+</Step>
+
+<Step title="Show Recovery Options">
+  Give users a way to recover from errors:
+  
+  ```jsx
+  {error && (
+    <div>
+      <p>Something went wrong.</p>
+      <button onClick={clearCanvas}>Try Again</button>
+    </div>
+  )}
+  ```
+</Step>
+
+<Step title="Log Errors for Debugging">
+  Always log errors for troubleshooting:
+  
+  ```jsx
+  useEffect(() => {
+    if (!error) return;
+    console.error('Recorder error:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    });
+  }, [error]);
+  ```
+</Step>
+
+</Steps>
+
+## User Feedback Components
+
+### Error Alert Component
+
+```jsx
+function ErrorAlert({ error, onDismiss }) {
+  if (!error) return null;
+
+  return (
+    <div role="alert" style={{
+      padding: '16px',
+      backgroundColor: '#fee2e2',
+      border: '1px solid #fca5a5',
+      borderRadius: '8px',
+      color: '#7f1d1d',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    }}>
+      <div>
+        <strong>⚠️ Error:</strong> {error.message}
+      </div>
+      <button onClick={onDismiss} style={{
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: '20px',
+      }}>
+        ×
+      </button>
+    </div>
+  );
+}
+
+// Usage
+const { error, clearCanvas } = useVoiceVisualizer();
+
+<ErrorAlert error={error} onDismiss={clearCanvas} />
+```
+
+### Loading State for Error Recovery
+
+```jsx
+function RecorderWithLoadingState() {
+  const [isRetrying, setIsRetrying] = useState(false);
+  const recorderControls = useVoiceVisualizer();
+  const { error, clearCanvas, startRecording } = recorderControls;
+
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    clearCanvas();
+    
+    // Wait a bit before retrying
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    startRecording();
+    setIsRetrying(false);
+  };
+
+  return (
+    <div>
+      <VoiceVisualizer controls={recorderControls} />
+      {error && (
+        <div>
+          <p>Error: {error.message}</p>
+          <button onClick={handleRetry} disabled={isRetrying}>
+            {isRetrying ? 'Retrying...' : 'Try Again'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+<Warning>
+**Critical Scenarios**: Always handle these error cases:
+- Microphone permission denied
+- No audio device available
+- Microphone in use by another application
+- Empty or corrupted audio blob
+</Warning>
+
+## Testing Error Scenarios
+
+To test error handling in development:
+
+```jsx
+// Simulate permission denied
+const recorderControls = useVoiceVisualizer({
+  onStartRecording: () => {
+    // Throw error for testing
+    throw new Error('NotAllowedError: Permission denied');
+  },
+});
+
+// Simulate empty blob
+const recorderControls = useVoiceVisualizer({
+  onStopRecording: () => {
+    // Force error state
+    throw new Error('Error: The audio blob is empty');
+  },
+});
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Basic Usage" icon="circle-play" href="/guides/basic-usage">
+    Learn the fundamentals
+  </Card>
+  <Card title="Hook API Reference" icon="book" href="/api-reference/hook">
+    View all error-related callbacks
+  </Card>
+</CardGroup>

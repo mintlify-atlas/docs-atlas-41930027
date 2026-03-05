@@ -1,0 +1,258 @@
+---
+title: 'Migrating to v2.x.x'
+description: 'Complete guide to migrating from v1.x to v2.x.x of React Voice Visualizer'
+---
+
+## Overview
+
+Version 2.x.x of React Voice Visualizer introduces significant improvements to the library's API design and extends functionality with new features. This guide will help you smoothly transition your existing code from v1.x to the latest version.
+
+The current stable version is **2.0.8**.
+
+<Warning>
+This version includes breaking changes that require code modifications. Please read the breaking changes section carefully before upgrading.
+</Warning>
+
+## Breaking Changes
+
+### Internal Audio Ref Management
+
+The most significant breaking change in v2.x.x is how audio references are handled.
+
+<Warning>
+**Ref Handling Update**: The library now manages audio references (`audioRef`) internally. You no longer need to pass `ref={audioRef}` separately to components.
+</Warning>
+
+This change provides a more seamless and intuitive developer experience by removing the need for manual ref management.
+
+#### Before (v1.x)
+
+```jsx
+import { useVoiceVisualizer, VoiceVisualizer } from 'react-voice-visualizer';
+
+function App() {
+  const recorderControls = useVoiceVisualizer();
+  const { audioRef } = recorderControls;
+
+  return (
+    <div>
+      <VoiceVisualizer controls={recorderControls} />
+      <audio ref={audioRef} /> {/* Manual ref required */}
+    </div>
+  );
+}
+```
+
+#### After (v2.x)
+
+```jsx
+import { useVoiceVisualizer, VoiceVisualizer } from 'react-voice-visualizer';
+
+function App() {
+  const recorderControls = useVoiceVisualizer();
+
+  return (
+    <div>
+      <VoiceVisualizer controls={recorderControls} />
+      {/* audioRef is managed internally - no manual ref needed */}
+    </div>
+  );
+}
+```
+
+## New Features
+
+### Preloaded Audio Blob Support
+
+<Note>
+Version 2.x.x introduces the ability to set preloaded audio blobs, expanding the library's versatility in different scenarios.
+</Note>
+
+The new `setPreloadedAudioBlob()` function allows you to load audio from various sources:
+
+- User file inputs
+- External URLs
+- Local file system
+- Generated audio data
+
+#### Example Usage
+
+```jsx
+import { useVoiceVisualizer, VoiceVisualizer } from 'react-voice-visualizer';
+
+function App() {
+  const recorderControls = useVoiceVisualizer();
+  const { setPreloadedAudioBlob } = recorderControls;
+
+  const handleFileUpload = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setPreloadedAudioBlob(file);
+    }
+  };
+
+  const loadAudioFromUrl = async (url) => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    setPreloadedAudioBlob(blob);
+  };
+
+  return (
+    <div>
+      <VoiceVisualizer controls={recorderControls} />
+      <input type="file" accept="audio/*" onChange={handleFileUpload} />
+    </div>
+  );
+}
+```
+
+For more detailed information about this feature, see the [Preloaded Audio Guide](/guides/preloaded-audio).
+
+## Migration Steps
+
+Follow these steps to migrate your application to v2.x.x:
+
+<Steps>
+  <Step title="Update Package Version">
+    Update your `package.json` to use the latest v2.x.x version:
+
+    ```bash
+    npm install react-voice-visualizer@latest
+    ```
+
+    or
+
+    ```bash
+    yarn add react-voice-visualizer@latest
+    ```
+  </Step>
+
+  <Step title="Remove Manual Ref Assignments">
+    Search your codebase for any instances where you're manually passing `ref={audioRef}` to audio elements or components. Remove these manual ref assignments as the library now handles this internally.
+
+    **Search for patterns like:**
+    - `<audio ref={audioRef}>`
+    - `ref={audioRef}`
+    - Any destructuring of `audioRef` from `recorderControls`
+  </Step>
+
+  <Step title="Update Audio Loading Logic (if applicable)">
+    If you're loading external audio files, update your code to use the new `setPreloadedAudioBlob()` function:
+
+    ```jsx
+    const { setPreloadedAudioBlob } = recorderControls;
+    
+    // Load audio from file input
+    const handleFile = (event) => {
+      const file = event.target.files[0];
+      setPreloadedAudioBlob(file);
+    };
+    ```
+  </Step>
+
+  <Step title="Test Your Implementation">
+    Thoroughly test your application to ensure:
+    - Audio recording still works as expected
+    - Audio playback functions correctly
+    - Visualization renders properly
+    - Any custom audio loading logic works with the new API
+  </Step>
+</Steps>
+
+## Troubleshooting
+
+### Common Issues
+
+<AccordionGroup>
+  <Accordion title="Audio not playing after migration">
+    **Solution**: Ensure you've removed all manual `ref={audioRef}` assignments. The library now manages audio references internally, and manual ref assignments may cause conflicts.
+
+    ```jsx
+    // ❌ Don't do this in v2.x
+    <audio ref={audioRef} />
+
+    // ✅ Just use the component
+    <VoiceVisualizer controls={recorderControls} />
+    ```
+  </Accordion>
+
+  <Accordion title="TypeScript errors about audioRef">
+    **Solution**: Remove `audioRef` from your destructuring assignments. This property may still exist for backward compatibility but should not be used directly.
+
+    ```tsx
+    // ❌ Old way
+    const { audioRef, recordedBlob } = recorderControls;
+
+    // ✅ New way
+    const { recordedBlob } = recorderControls;
+    ```
+  </Accordion>
+
+  <Accordion title="Preloaded audio not loading">
+    **Solution**: Ensure you're calling `setPreloadedAudioBlob()` with a valid Blob or File object:
+
+    ```jsx
+    // ✅ Correct usage
+    setPreloadedAudioBlob(audioBlob);
+
+    // ❌ Incorrect - passing URL instead of Blob
+    setPreloadedAudioBlob(audioUrl);
+    ```
+
+    If loading from a URL, fetch the blob first:
+
+    ```jsx
+    const response = await fetch(audioUrl);
+    const blob = await response.blob();
+    setPreloadedAudioBlob(blob);
+    ```
+  </Accordion>
+
+  <Accordion title="Build errors after upgrading">
+    **Solution**: Clear your node_modules and lock file, then reinstall:
+
+    ```bash
+    rm -rf node_modules package-lock.json
+    npm install
+    ```
+
+    or for Yarn:
+
+    ```bash
+    rm -rf node_modules yarn.lock
+    yarn install
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Migration Checklist
+
+Use this checklist to ensure you've completed all migration steps:
+
+- [ ] Updated package to v2.x.x
+- [ ] Removed all manual `ref={audioRef}` assignments
+- [ ] Removed unused `audioRef` destructuring from code
+- [ ] Updated audio loading logic to use `setPreloadedAudioBlob()` (if applicable)
+- [ ] Tested recording functionality
+- [ ] Tested playback functionality
+- [ ] Tested visualization rendering
+- [ ] Verified all custom audio loading works correctly
+- [ ] Cleared build cache and rebuilt application
+- [ ] Tested in all target environments
+
+## Need Help?
+
+If you encounter issues during migration that aren't covered in this guide:
+
+- Check the [API Reference](/api/use-voice-visualizer) for detailed information
+- Review the [Quickstart Guide](/quickstart) for basic usage examples
+- Visit the [GitHub Issues](https://github.com/YZarytskyi/react-voice-visualizer/issues) page
+- Try the [Demo App](https://react-voice-visualizer.vercel.app/) to see v2.x.x in action
+
+## What's Next?
+
+After successfully migrating to v2.x.x, explore the new features:
+
+- Learn more about [Preloaded Audio Support](/guides/preloaded-audio)
+- Check out advanced [Customization Options](/guides/customization)
+- Review all available [Controls and Methods](/api/use-voice-visualizer)

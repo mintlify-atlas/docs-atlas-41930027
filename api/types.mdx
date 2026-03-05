@@ -1,0 +1,461 @@
+---
+title: TypeScript Types
+description: Complete TypeScript interface definitions for React Voice Visualizer
+---
+
+This page documents all exported TypeScript interfaces and types used in the React Voice Visualizer library.
+
+## Controls
+
+The `Controls` interface defines the complete return type of the `useVoiceVisualizer` hook. This object contains all state, functions, and refs needed to control audio recording and playback.
+
+```typescript
+interface Controls {
+  // Refs
+  audioRef: MutableRefObject<HTMLAudioElement | null>;
+  
+  // State - Recording
+  isRecordingInProgress: boolean;
+  isPausedRecording: boolean;
+  audioData: Uint8Array;
+  recordingTime: number;
+  mediaRecorder: MediaRecorder | null;
+  
+  // State - Playback
+  duration: number;
+  currentAudioTime: number;
+  audioSrc: string;
+  isPausedRecordedAudio: boolean;
+  
+  // State - Processing
+  isProcessingRecordedAudio: boolean;
+  isCleared: boolean;
+  isAvailableRecordedAudio: boolean;
+  isProcessingOnResize: boolean;
+  isProcessingStartRecording: boolean;
+  isPreloadedBlob: boolean;
+  
+  // State - Data
+  recordedBlob: Blob | null;
+  bufferFromRecordedBlob: AudioBuffer | null;
+  error: Error | null;
+  
+  // Formatted Values
+  formattedDuration: string;
+  formattedRecordingTime: string;
+  formattedRecordedAudioCurrentTime: string;
+  
+  // Functions - Recording Control
+  startRecording: () => void;
+  stopRecording: () => void;
+  togglePauseResume: () => void;
+  
+  // Functions - Playback Control
+  startAudioPlayback: () => void;
+  stopAudioPlayback: () => void;
+  setCurrentAudioTime: Dispatch<SetStateAction<number>>;
+  
+  // Functions - File Operations
+  saveAudioFile: () => void;
+  clearCanvas: () => void;
+  setPreloadedAudioBlob: (blob: Blob) => void;
+  
+  // Internal Functions
+  _setIsProcessingAudioOnComplete: Dispatch<SetStateAction<boolean>>;
+  _setIsProcessingOnResize: Dispatch<SetStateAction<boolean>>;
+}
+```
+
+### Usage
+
+```typescript
+import { Controls, useVoiceVisualizer } from "react-voice-visualizer";
+
+function MyComponent() {
+  const controls: Controls = useVoiceVisualizer();
+  
+  return <VoiceVisualizer controls={controls} />;
+}
+```
+
+### State Properties
+
+#### Recording State
+
+- **`isRecordingInProgress`**: `boolean` - Whether recording is currently active
+- **`isPausedRecording`**: `boolean` - Whether the active recording is paused
+- **`audioData`**: `Uint8Array` - Real-time audio data for visualization
+- **`recordingTime`**: `number` - Elapsed recording time in milliseconds
+- **`mediaRecorder`**: `MediaRecorder | null` - The MediaRecorder instance
+
+#### Playback State
+
+- **`duration`**: `number` - Total duration of recorded audio in seconds
+- **`currentAudioTime`**: `number` - Current playback position in seconds
+- **`audioSrc`**: `string` - URL of the recorded audio file
+- **`isPausedRecordedAudio`**: `boolean` - Whether playback is paused
+
+#### Processing State
+
+- **`isProcessingRecordedAudio`**: `boolean` - Whether audio is being processed
+- **`isCleared`**: `boolean` - Whether the canvas has been cleared
+- **`isAvailableRecordedAudio`**: `boolean` - Whether recorded audio is ready
+- **`isProcessingOnResize`**: `boolean` - Whether processing during resize
+- **`isProcessingStartRecording`**: `boolean` - Whether starting recording
+- **`isPreloadedBlob`**: `boolean` - Whether audio was preloaded
+
+#### Data State
+
+- **`recordedBlob`**: `Blob | null` - Recorded audio as a Blob
+- **`bufferFromRecordedBlob`**: `AudioBuffer | null` - Decoded audio buffer
+- **`error`**: `Error | null` - Any error that occurred
+
+#### Formatted Values
+
+- **`formattedDuration`**: `string` - Formatted duration (e.g., "09:51m")
+- **`formattedRecordingTime`**: `string` - Formatted recording time (e.g., "09:51")
+- **`formattedRecordedAudioCurrentTime`**: `string` - Formatted playback time (e.g., "09:51:1")
+
+## useVoiceVisualizerParams
+
+The `useVoiceVisualizerParams` interface defines the optional parameters accepted by the `useVoiceVisualizer` hook.
+
+```typescript
+interface useVoiceVisualizerParams {
+  onStartRecording?: () => void;
+  onStopRecording?: () => void;
+  onPausedRecording?: () => void;
+  onResumedRecording?: () => void;
+  onClearCanvas?: () => void;
+  onEndAudioPlayback?: () => void;
+  onStartAudioPlayback?: () => void;
+  onPausedAudioPlayback?: () => void;
+  onResumedAudioPlayback?: () => void;
+  onErrorPlayingAudio?: (error: Error) => void;
+  shouldHandleBeforeUnload?: boolean;
+}
+```
+
+### Usage
+
+```typescript
+import { useVoiceVisualizerParams, useVoiceVisualizer } from "react-voice-visualizer";
+
+const params: useVoiceVisualizerParams = {
+  onStartRecording: () => console.log("Started"),
+  onStopRecording: () => console.log("Stopped"),
+  shouldHandleBeforeUnload: true,
+};
+
+const controls = useVoiceVisualizer(params);
+```
+
+### Callback Parameters
+
+All callback functions are optional and allow you to react to different lifecycle events:
+
+#### Recording Callbacks
+
+- **`onStartRecording`**: Called when recording starts
+- **`onStopRecording`**: Called when recording stops
+- **`onPausedRecording`**: Called when recording is paused
+- **`onResumedRecording`**: Called when recording is resumed
+
+#### Playback Callbacks
+
+- **`onStartAudioPlayback`**: Called when playback starts
+- **`onPausedAudioPlayback`**: Called when playback is paused
+- **`onResumedAudioPlayback`**: Called when playback resumes
+- **`onEndAudioPlayback`**: Called when playback ends
+
+#### Other Callbacks
+
+- **`onClearCanvas`**: Called when the canvas is cleared
+- **`onErrorPlayingAudio`**: Called when audio playback encounters an error
+
+#### Configuration
+
+- **`shouldHandleBeforeUnload`**: Whether to show a warning when leaving the page with unsaved recordings (default: `true`)
+
+## BarItem
+
+The `BarItem` interface represents a single bar in the waveform visualization.
+
+```typescript
+interface BarItem {
+  startY: number;
+  barHeight: number;
+}
+```
+
+### Properties
+
+- **`startY`**: `number` - The Y coordinate where the bar starts
+- **`barHeight`**: `number` - The height of the bar in pixels
+
+### Usage
+
+This interface is primarily used internally by the visualization engine. You typically won't need to work with it directly unless you're building custom visualization logic.
+
+## BarsData
+
+The `BarsData` interface represents processed data for a single bar in the recorded audio visualization.
+
+```typescript
+interface BarsData {
+  max: number;
+}
+```
+
+### Properties
+
+- **`max`**: `number` - The maximum amplitude value for this bar
+
+### Usage
+
+This interface is used internally when processing recorded audio for visualization. An array of `BarsData` objects represents the complete waveform.
+
+## GetBarsDataParams
+
+The `GetBarsDataParams` interface defines parameters for the bars data calculation worker.
+
+```typescript
+type GetBarsDataParams = {
+  bufferData: Float32Array;
+  height: number;
+  width: number;
+  barWidth: number;
+  gap: number;
+};
+```
+
+### Properties
+
+- **`bufferData`**: `Float32Array` - Raw audio buffer data
+- **`height`**: `number` - Canvas height in pixels
+- **`width`**: `number` - Canvas width in pixels
+- **`barWidth`**: `number` - Width of each bar in pixels
+- **`gap`**: `number` - Gap between bars in pixels
+
+### Usage
+
+This type is used internally for calculating the waveform visualization from recorded audio data.
+
+## DrawByLiveStreamParams
+
+The `DrawByLiveStreamParams` interface defines parameters for drawing live recording visualization.
+
+```typescript
+interface DrawByLiveStreamParams {
+  audioData: Uint8Array;
+  unit: number;
+  index: MutableRefObject<number>;
+  index2: MutableRefObject<number>;
+  canvas: HTMLCanvasElement;
+  isRecordingInProgress: boolean;
+  isPausedRecording: boolean;
+  picks: Array<BarItem | null>;
+  backgroundColor: string;
+  barWidth: number;
+  mainBarColor: string;
+  secondaryBarColor: string;
+  rounded: number;
+  animateCurrentPick: boolean;
+  fullscreen: boolean;
+}
+```
+
+### Usage
+
+This interface is used internally by the live recording visualization renderer. You typically won't need to use it directly.
+
+## DrawByBlob
+
+The `DrawByBlob` interface defines parameters for drawing recorded audio visualization.
+
+```typescript
+interface DrawByBlob {
+  barsData: BarsData[];
+  canvas: HTMLCanvasElement;
+  barWidth: number;
+  gap: number;
+  backgroundColor: string;
+  mainBarColor: string;
+  secondaryBarColor: string;
+  currentAudioTime?: number;
+  rounded: number;
+  duration: number;
+}
+```
+
+### Usage
+
+This interface is used internally by the recorded audio visualization renderer. You typically won't need to use it directly.
+
+## PaintLineParams
+
+The `PaintLineParams` interface defines parameters for painting individual waveform bars.
+
+```typescript
+interface PaintLineParams {
+  context: CanvasRenderingContext2D;
+  color: string;
+  rounded: number | number[];
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+```
+
+### Properties
+
+- **`context`**: `CanvasRenderingContext2D` - Canvas rendering context
+- **`color`**: `string` - Fill color for the bar
+- **`rounded`**: `number | number[]` - Border radius (single value or array)
+- **`x`**: `number` - X coordinate
+- **`y`**: `number` - Y coordinate
+- **`w`**: `number` - Width
+- **`h`**: `number` - Height
+
+### Usage
+
+This interface is used internally for rendering individual bars in the waveform.
+
+## GetDataForCanvasParams
+
+The `GetDataForCanvasParams` interface defines parameters for canvas initialization.
+
+```typescript
+interface GetDataForCanvasParams {
+  canvas: HTMLCanvasElement;
+  backgroundColor: string;
+}
+```
+
+### Properties
+
+- **`canvas`**: `HTMLCanvasElement` - The canvas element
+- **`backgroundColor`**: `string` - Background color to apply
+
+### Usage
+
+This interface is used internally for canvas setup operations.
+
+## UseWebWorkerParams
+
+The `UseWebWorkerParams` interface defines parameters for the web worker hook.
+
+```typescript
+interface UseWebWorkerParams<T> {
+  fn: AnyFunction;
+  initialValue: T;
+  onMessageReceived?: () => void;
+}
+```
+
+### Properties
+
+- **`fn`**: `AnyFunction` - The function to run in the worker
+- **`initialValue`**: `T` - Initial value for the result
+- **`onMessageReceived`**: `() => void` - Optional callback when worker completes
+
+### Usage
+
+This interface is used internally by the web worker system for processing audio data.
+
+## AnyFunction
+
+A utility type for generic function signatures.
+
+```typescript
+type AnyFunction = (...args: any[]) => any;
+```
+
+### Usage
+
+This type is used internally for flexible function typing.
+
+## PaintLineFromCenterToRightParams
+
+The `PaintLineFromCenterToRightParams` interface defines parameters for fullscreen visualization.
+
+```typescript
+interface PaintLineFromCenterToRightParams {
+  context: CanvasRenderingContext2D;
+  color: string;
+  rounded: number;
+  width: number;
+  height: number;
+  barWidth: number;
+}
+```
+
+### Usage
+
+This interface is used internally when rendering fullscreen mode visualizations.
+
+## Type Safety Tips
+
+<Tip>
+  Import types directly from the package to ensure type safety:
+  
+  ```typescript
+  import type { Controls, useVoiceVisualizerParams } from "react-voice-visualizer";
+  ```
+</Tip>
+
+## Example: Fully Typed Component
+
+```typescript
+import { 
+  VoiceVisualizer, 
+  useVoiceVisualizer,
+  Controls,
+  useVoiceVisualizerParams 
+} from "react-voice-visualizer";
+import { FC } from "react";
+
+interface AudioRecorderProps {
+  onRecordingComplete?: (blob: Blob) => void;
+}
+
+const AudioRecorder: FC<AudioRecorderProps> = ({ onRecordingComplete }) => {
+  const params: useVoiceVisualizerParams = {
+    onStopRecording: () => {
+      if (onRecordingComplete && recorderControls.recordedBlob) {
+        onRecordingComplete(recorderControls.recordedBlob);
+      }
+    },
+    shouldHandleBeforeUnload: true,
+  };
+
+  const recorderControls: Controls = useVoiceVisualizer(params);
+
+  return (
+    <div>
+      <VoiceVisualizer
+        controls={recorderControls}
+        height={200}
+        width="100%"
+        mainBarColor="#4F46E5"
+        secondaryBarColor="#E0E7FF"
+      />
+      
+      {recorderControls.error && (
+        <div className="error">
+          Error: {recorderControls.error.message}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AudioRecorder;
+```
+
+## See Also
+
+- [useVoiceVisualizer Hook](/api/use-voice-visualizer) - Hook that returns Controls
+- [VoiceVisualizer Component](/api/voice-visualizer-component) - Component that accepts Controls
+- [Customization Guide](/guides/customization) - Styling and customization patterns

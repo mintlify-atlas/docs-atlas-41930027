@@ -1,0 +1,401 @@
+---
+title: Recording
+description: How audio recording works with getUserMedia and MediaRecorder
+---
+
+## Overview
+
+React Voice Visualizer uses the **MediaRecorder API** combined with the **MediaStream API** to capture audio from the user's microphone. This page explains the recording lifecycle, state management, and error handling.
+
+## Recording Lifecycle
+
+### 1. Starting a Recording
+
+When `startRecording()` is called, the library requests microphone access:
+
+```typescript
+// From useVoiceVisualizer.tsx:151-188
+const getUserMedia = () => {
+  setIsProcessingStartRecording(true);
+
+  navigator.mediaDevices
+    .getUserMedia({ audio: true })
+    .then((stream) => {
+      setIsCleared(false);
+      setIsProcessingStartRecording(false);
+      setIsRecordingInProgress(true);
+      setPrevTime(performance.now());
+      setAudioStream(stream);
+      
+      // Create Web Audio API nodes
+      audioContextRef.current = new window.AudioContext();
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      dataArrayRef.current = new Uint8Array(
+        analyserRef.current.frequencyBinCount
+      );
+      sourceRef.current = audioContextRef.current.createMediaStreamSource(stream);
+      sourceRef.current.connect(analyserRef.current);
+      
+      // Start MediaRecorder
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      mediaRecorderRef.current.addEventListener('dataavailable', handleDataAvailable);
+      mediaRecorderRef.current.start();
+      
+      if (onStartRecording) onStartRecording();
+      recordingFrame();
+    })
+    .catch((error) => {
+      setIsProcessingStartRecording(false);
+      setError(error instanceof Error ? error : new Error('Error starting audio recording'));
+    });
+};
+```
+
+<Steps>
+  <Step title="Request Permission">
+    `getUserMedia({ audio: true })` prompts the user for microphone access
+  </Step>
+  
+  <Step title="Initialize Audio Processing">
+    Creates AudioContext, AnalyserNode, and connects the stream for real-time visualization
+  </Step>
+  
+  <Step title="Start Recording">
+    Initializes MediaRecorder and begins capturing audio chunks
+  </Step>
+  
+  <Step title="Begin Visualization">
+    Calls `recordingFrame()` to start the animation loop
+  </Step>
+</Steps>
+
+<Info>
+The `isProcessingStartRecording` state is `true` between when the user clicks "Record" and when recording actually begins. This is useful for showing a loading indicator while waiting for permissions.
+</Info>
+
+### 2. Recording States
+
+The hook manages three distinct recording states:
+
+| State | Description | Hook Property |
+|-------|-------------|---------------|
+| **Idle** | Not recording, no active session | `isRecordingInProgress: false` |
+| **Recording** | Actively capturing audio | `isRecordingInProgress: true`<br/>`isPausedRecording: false` |
+| **Paused** | Recording paused, can be resumed | `isRecordingInProgress: true`<br/>`isPausedRecording: true` |
+
+```typescript
+// State declarations (useVoiceVisualizer.tsx:24-25)
+const [isRecordingInProgress, setIsRecordingInProgress] = useState(false);
+const [isPausedRecording, setIsPausedRecording] = useState(false);
+```
+
+### 3. Real-time Data Capture
+
+While recording, the `recordingFrame()` function continuously extracts audio data:
+
+```typescript
+// From useVoiceVisualizer.tsx:190-194
+const recordingFrame = () => {
+  analyserRef.current!.getByteTimeDomainData(dataArrayRef.current!);
+  setAudioData(new Uint8Array(dataArrayRef.current!));
+  rafRecordingRef.current = requestAnimationFrame(recordingFrame);
+};
+```
+
+<Note>
+This uses `requestAnimationFrame` for smooth, synchronized updates at ~60fps. The `getByteTimeDomainData` method fills the Uint8Array with time-domain audio samples ranging from 0-255.
+</Note>
+
+See [Visualization](/concepts/visualization) for details on how this data is rendered.
+
+## Pause and Resume
+
+The `togglePauseResume()` function handles both pause and resume:
+
+```typescript
+// From useVoiceVisualizer.tsx:340-356
+const togglePauseResume = () => {
+  if (isRecordingInProgress) {
+    setIsPausedRecording((prevPaused) => !prevPaused);
+    
+    if (mediaRecorderRef.current?.state === 'recording') {
+      // Pause
+      mediaRecorderRef.current?.pause();
+      setRecordingTime((prev) => prev + (performance.now() - prevTime));
+      if (rafRecordingRef.current) {
+        cancelAnimationFrame(rafRecordingRef.current);
+      }
+      if (onPausedRecording) onPausedRecording();
+    } else {
+      // Resume
+      rafRecordingRef.current = requestAnimationFrame(recordingFrame);
+      mediaRecorderRef.current?.resume();
+      setPrevTime(performance.now());
+      if (onResumedRecording) onResumedRecording();
+    }
+    return;
+  }
+  // ... playback logic
+};
+```
+
+<Info>
+When paused, the `recordingFrame` animation loop is stopped to freeze the visualization, but the MediaRecorder continues to hold the audio stream in memory.
+</Info>
+
+## Recording Time Tracking
+
+The hook tracks elapsed recording time with millisecond precision:
+
+```typescript
+// From useVoiceVisualizer.tsx:65-77
+useEffect(() => {
+  if (!isRecordingInProgress || isPausedRecording) return;
+
+  const updateTimer = () => {
+    const timeNow = performance.now();
+    setRecordingTime((prev) => prev + (timeNow - prevTime));
+    setPrevTime(timeNow);
+  };
+
+  const interval = setInterval(updateTimer, 1000);
+
+  return () => clearInterval(interval);
+}, [prevTime, isPausedRecording, isRecordingInProgress]);
+```
+
+The `recordingTime` state (in milliseconds) is automatically formatted:
+
+```typescript
+// From useVoiceVisualizer.tsx:59
+const formattedRecordingTime = formatRecordingTime(recordingTime); // e.g., "02:34"
+```
+
+## Stopping a Recording
+
+When `stopRecording()` is called, the library performs cleanup and processes the audio:
+
+```typescript
+// From useVoiceVisualizer.tsx:220-241
+const stopRecording = () => {
+  if (!isRecordingInProgress) return;
+
+  setIsRecordingInProgress(false);
+  
+  // Stop MediaRecorder - triggers 'dataavailable' event
+  if (mediaRecorderRef.current) {
+    mediaRecorderRef.current.stop();
+    mediaRecorderRef.current.removeEventListener('dataavailable', handleDataAvailable);
+  }
+  
+  // Stop all audio tracks
+  audioStream?.getTracks().forEach((track) => track.stop());
+  
+  // Cancel animation frame
+  if (rafRecordingRef.current) cancelAnimationFrame(rafRecordingRef.current);
+  
+  // Disconnect Web Audio nodes
+  if (sourceRef.current) sourceRef.current.disconnect();
+  if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+    void audioContextRef.current.close();
+  }
+  
+  _setIsProcessingAudioOnComplete(true);
+  setRecordingTime(0);
+  setIsPausedRecording(false);
+  if (onStopRecording) onStopRecording();
+};
+```
+
+### Blob Generation
+
+When `mediaRecorder.stop()` is called, it triggers the `dataavailable` event:
+
+```typescript
+// From useVoiceVisualizer.tsx:196-203
+const handleDataAvailable = (event: BlobEvent) => {
+  if (!mediaRecorderRef.current) return;
+
+  mediaRecorderRef.current = null;
+  audioRef.current = new Audio();
+  setRecordedBlob(event.data);
+  void processBlob(event.data);
+};
+```
+
+The `processBlob` function converts the Blob to an AudioBuffer:
+
+```typescript
+// From useVoiceVisualizer.tsx:109-134
+const processBlob = async (blob: Blob) => {
+  if (!blob) return;
+
+  try {
+    if (blob.size === 0) {
+      throw new Error('Error: The audio blob is empty');
+    }
+    
+    // Create URL for <audio> playback
+    const audioSrcFromBlob = URL.createObjectURL(blob);
+    setAudioSrc(audioSrcFromBlob);
+
+    // Decode to AudioBuffer for waveform generation
+    const audioBuffer = await blob.arrayBuffer();
+    const audioContext = new AudioContext();
+    const buffer = await audioContext.decodeAudioData(audioBuffer);
+    setBufferFromRecordedBlob(buffer);
+    setDuration(buffer.duration - 0.06);
+
+    setError(null);
+  } catch (error) {
+    console.error('Error processing the audio blob:', error);
+    setError(
+      error instanceof Error
+        ? error
+        : new Error('Error processing the audio blob')
+    );
+  }
+};
+```
+
+<Note>
+The duration is adjusted by `-0.06` seconds to account for a small padding that appears in decoded audio buffers (useVoiceVisualizer.tsx:123).
+</Note>
+
+## Error Handling
+
+The library handles several error scenarios:
+
+### Permission Denied
+
+If the user denies microphone access:
+
+```typescript
+.catch((error) => {
+  setIsProcessingStartRecording(false);
+  setError(error instanceof Error ? error : new Error('Error starting audio recording'));
+});
+```
+
+Access the error via:
+
+```tsx
+const { error } = useVoiceVisualizer();
+
+useEffect(() => {
+  if (error) {
+    console.error('Recording error:', error);
+    // Show user-friendly message
+  }
+}, [error]);
+```
+
+### Empty Blob
+
+If the recording produces no audio data:
+
+```typescript
+if (blob.size === 0) {
+  throw new Error('Error: The audio blob is empty');
+}
+```
+
+### Audio Processing Errors
+
+If decoding the audio buffer fails (invalid format, corruption, etc.), the error is caught and stored in state.
+
+<Info>
+When an error occurs, the `clearCanvas()` function is automatically called to reset the UI (useVoiceVisualizer.tsx:79-85).
+</Info>
+
+## State Management Patterns
+
+The hook exposes several state values for UI integration:
+
+```tsx
+const {
+  isRecordingInProgress,     // true when actively recording
+  isPausedRecording,          // true when recording is paused
+  isProcessingStartRecording, // true while waiting for permissions
+  recordingTime,              // milliseconds elapsed
+  formattedRecordingTime,     // formatted as "MM:SS"
+  recordedBlob,               // the recorded audio Blob
+  error,                      // any error that occurred
+} = useVoiceVisualizer();
+```
+
+Example UI implementation:
+
+```tsx
+{isProcessingStartRecording && <Spinner />}
+{isRecordingInProgress && (
+  <div>
+    <span>{formattedRecordingTime}</span>
+    <button onClick={togglePauseResume}>
+      {isPausedRecording ? 'Resume' : 'Pause'}
+    </button>
+    <button onClick={stopRecording}>Stop</button>
+  </div>
+)}
+```
+
+## Preloaded Audio Blobs (v2.x.x)
+
+<Note>
+Starting in version 2.x.x, you can load audio from external sources using `setPreloadedAudioBlob()`.
+</Note>
+
+```typescript
+// From useVoiceVisualizer.tsx:136-149
+const setPreloadedAudioBlob = (blob: Blob) => {
+  if (blob instanceof Blob) {
+    clearCanvas();
+    setIsPreloadedBlob(true);
+    setIsCleared(false);
+    _setIsProcessingAudioOnComplete(true);
+    setIsRecordingInProgress(false);
+    setRecordingTime(0);
+    setIsPausedRecording(false);
+    audioRef.current = new Audio();
+    setRecordedBlob(blob);
+    void processBlob(blob);
+  }
+};
+```
+
+Usage example:
+
+```tsx
+const controls = useVoiceVisualizer();
+
+const handleFileUpload = (event: ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0];
+  if (file) {
+    controls.setPreloadedAudioBlob(file);
+  }
+};
+
+return (
+  <div>
+    <input type="file" accept="audio/*" onChange={handleFileUpload} />
+    <VoiceVisualizer controls={controls} />
+  </div>
+);
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Visualization" icon="waveform" href="/concepts/visualization">
+    Learn how audio data is rendered on canvas
+  </Card>
+  <Card title="Playback" icon="play" href="/concepts/playback">
+    Understand audio playback controls
+  </Card>
+  <Card title="Customization" icon="palette" href="/guides/customization">
+    Customize recording UI and behavior
+  </Card>
+  <Card title="Hook API" icon="code" href="/api/use-voice-visualizer">
+    Complete useVoiceVisualizer API reference
+  </Card>
+</CardGroup>

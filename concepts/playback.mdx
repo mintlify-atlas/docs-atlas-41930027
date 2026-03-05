@@ -1,0 +1,560 @@
+---
+title: Playback
+description: Audio playback controls and synchronized visualization
+---
+
+## Overview
+
+After recording audio, React Voice Visualizer provides comprehensive playback controls with synchronized waveform visualization. This page explains how playback works, the audio element management, and how visualization is synchronized with playback progress.
+
+## Audio Element Management
+
+### Internal Audio Reference (v2.x.x)
+
+<Note>
+Starting in version 2.x.x, the library manages the audio element (`audioRef`) internally. You no longer need to create or pass a ref manually.
+</Note>
+
+The audio element is created when recording stops or when a preloaded blob is set:
+
+```typescript
+// From useVoiceVisualizer.tsx:200
+audioRef.current = new Audio();
+```
+
+The ref is declared in the hook:
+
+```typescript
+// From useVoiceVisualizer.tsx:53
+const audioRef = useRef<HTMLAudioElement | null>(null);
+```
+
+And returned for programmatic access:
+
+```typescript
+// From useVoiceVisualizer.tsx:390
+return {
+  audioRef,
+  // ... other controls
+};
+```
+
+### Setting the Audio Source
+
+After the recorded blob is processed, the audio source is set:
+
+```typescript
+// From useVoiceVisualizer.tsx:116-117
+const audioSrcFromBlob = URL.createObjectURL(blob);
+setAudioSrc(audioSrcFromBlob);
+```
+
+Once processing is complete, the src is assigned:
+
+```typescript
+// From VoiceVisualizer.tsx:359-365
+function completedAudioProcessing() {
+  _setIsProcessingOnResize(false);
+  _setIsProcessingAudioOnComplete(false);
+  if (audioRef?.current && !isProcessingOnResize) {
+    audioRef.current.src = audioSrc;
+  }
+}
+```
+
+## Playback Controls
+
+### Starting Playback
+
+The `startAudioPlayback()` function initiates or resumes playback:
+
+```typescript
+// From useVoiceVisualizer.tsx:310-323
+const startAudioPlayback = () => {
+  if (!audioRef.current || isRecordingInProgress) return;
+
+  requestAnimationFrame(handleTimeUpdate);
+  startPlayingAudio();
+  audioRef.current.addEventListener('ended', onEndedRecordedAudio);
+  setIsPausedRecordedAudio(false);
+  
+  if (onStartAudioPlayback && currentAudioTime === 0) {
+    onStartAudioPlayback();
+  }
+  if (onResumedAudioPlayback && currentAudioTime !== 0) {
+    onResumedAudioPlayback();
+  }
+};
+```
+
+<Steps>
+  <Step title="Start Time Updates">
+    Begins the `requestAnimationFrame` loop to track current playback time
+  </Step>
+  
+  <Step title="Play Audio">
+    Calls `audio.play()` with error handling
+  </Step>
+  
+  <Step title="Add Event Listener">
+    Listens for the 'ended' event to reset playback when audio finishes
+  </Step>
+  
+  <Step title="Update State">
+    Sets `isPausedRecordedAudio` to `false`
+  </Step>
+  
+  <Step title="Trigger Callbacks">
+    Calls `onStartAudioPlayback` or `onResumedAudioPlayback` based on current time
+  </Step>
+</Steps>
+
+The actual `play()` call includes error handling:
+
+```typescript
+// From useVoiceVisualizer.tsx:294-308
+const startPlayingAudio = () => {
+  if (audioRef.current && audioRef.current.paused) {
+    const audioPromise = audioRef.current.play();
+    if (audioPromise !== undefined) {
+      audioPromise.catch((error) => {
+        console.error(error);
+        if (onErrorPlayingAudio) {
+          onErrorPlayingAudio(
+            error instanceof Error ? error : new Error('Error playing audio')
+          );
+        }
+      });
+    }
+  }
+};
+```
+
+<Info>
+The `audio.play()` method returns a Promise that can reject if playback is prevented (e.g., by browser autoplay policies). The error is caught and passed to the `onErrorPlayingAudio` callback.
+</Info>
+
+### Pausing Playback
+
+The `stopAudioPlayback()` function pauses playback:
+
+```typescript
+// From useVoiceVisualizer.tsx:325-338
+const stopAudioPlayback = () => {
+  if (!audioRef.current || isRecordingInProgress) return;
+
+  if (rafCurrentTimeUpdateRef.current) {
+    cancelAnimationFrame(rafCurrentTimeUpdateRef.current);
+  }
+  audioRef.current.removeEventListener('ended', onEndedRecordedAudio);
+  audioRef.current.pause();
+  setIsPausedRecordedAudio(true);
+  const newCurrentTime = audioRef.current.currentTime;
+  setCurrentAudioTime(newCurrentTime);
+  audioRef.current.currentTime = newCurrentTime;
+  if (onPausedAudioPlayback) onPausedAudioPlayback();
+};
+```
+
+<Steps>
+  <Step title="Cancel Animation Frame">
+    Stops the time update loop
+  </Step>
+  
+  <Step title="Remove Event Listener">
+    Removes the 'ended' event listener
+  </Step>
+  
+  <Step title="Pause Audio">
+    Calls `audio.pause()`
+  </Step>
+  
+  <Step title="Update State">
+    Sets `isPausedRecordedAudio` to `true` and stores current playback position
+  </Step>
+  
+  <Step title="Trigger Callback">
+    Calls `onPausedAudioPlayback` if provided
+  </Step>
+</Steps>
+
+### Toggle Play/Pause
+
+The `togglePauseResume()` function handles both recording and playback:
+
+```typescript
+// From useVoiceVisualizer.tsx:340-362
+const togglePauseResume = () => {
+  if (isRecordingInProgress) {
+    // ... recording pause/resume logic
+    return;
+  }
+
+  if (audioRef.current && isAvailableRecordedAudio) {
+    audioRef.current.paused ? startAudioPlayback() : stopAudioPlayback();
+  }
+};
+```
+
+This allows a single button to control both recording and playback states.
+
+## Current Time Tracking
+
+### Time Update Loop
+
+During playback, the current time is tracked using `requestAnimationFrame`:
+
+```typescript
+// From useVoiceVisualizer.tsx:205-211
+const handleTimeUpdate = () => {
+  if (!audioRef.current) return;
+
+  setCurrentAudioTime(audioRef.current.currentTime);
+
+  rafCurrentTimeUpdateRef.current = requestAnimationFrame(handleTimeUpdate);
+};
+```
+
+This creates a ~60fps update loop that synchronizes the visualization with playback.
+
+<Note>
+Using `requestAnimationFrame` instead of the audio element's `timeupdate` event provides smoother, more frequent updates for visualization (useVoiceVisualizer.tsx:210).
+</Note>
+
+### Formatted Time Display
+
+The hook provides pre-formatted time strings:
+
+```typescript
+// From useVoiceVisualizer.tsx:60-61
+const formattedRecordedAudioCurrentTime = formatRecordedAudioTime(currentAudioTime);
+```
+
+Example output:
+- `currentAudioTime = 65.432` → `formattedRecordedAudioCurrentTime = "01:05:4"`
+- Format: `MM:SS:D` (minutes:seconds:deciseconds)
+
+Usage:
+
+```tsx
+const { formattedRecordedAudioCurrentTime, formattedDuration } = useVoiceVisualizer();
+
+return (
+  <div>
+    <span>{formattedRecordedAudioCurrentTime} / {formattedDuration}</span>
+  </div>
+);
+```
+
+## Duration Calculation
+
+The audio duration is extracted from the AudioBuffer:
+
+```typescript
+// From useVoiceVisualizer.tsx:123
+setDuration(buffer.duration - 0.06);
+```
+
+<Info>
+The duration is adjusted by `-0.06` seconds to account for small padding in decoded audio buffers.
+</Info>
+
+The formatted duration:
+
+```typescript
+// From useVoiceVisualizer.tsx:58
+const formattedDuration = formatDurationTime(duration);
+```
+
+Example:
+- `duration = 125.4` → `formattedDuration = "02:05m"`
+- Format: `MM:SS` with 'm' suffix
+
+## Seeking (Manual Time Control)
+
+Users can click on the waveform to jump to a specific position:
+
+```typescript
+// From VoiceVisualizer.tsx:379-390
+const handleRecordedAudioCurrentTime: MouseEventHandler<HTMLCanvasElement> = (e) => {
+  if (audioRef?.current && canvasRef.current) {
+    const newCurrentTime =
+      (duration / canvasCurrentWidth) *
+      (e.clientX - canvasRef.current.getBoundingClientRect().left);
+
+    audioRef.current.currentTime = newCurrentTime;
+    setCurrentAudioTime(newCurrentTime);
+  }
+};
+```
+
+The canvas has an `onClick` handler:
+
+```tsx
+// From VoiceVisualizer.tsx:408
+<canvas
+  ref={canvasRef}
+  onClick={handleRecordedAudioCurrentTime}
+  // ...
+/>
+```
+
+<Steps>
+  <Step title="Calculate Click Position">
+    Converts mouse X coordinate to canvas position
+  </Step>
+  
+  <Step title="Calculate Time">
+    Maps position to timestamp: `(duration / canvasWidth) * clickX`
+  </Step>
+  
+  <Step title="Update Audio Element">
+    Sets `audio.currentTime` to the new position
+  </Step>
+  
+  <Step title="Update State">
+    Calls `setCurrentAudioTime` to trigger visualization update
+  </Step>
+</Steps>
+
+## Synchronized Visualization
+
+The waveform visualization updates in sync with playback:
+
+```typescript
+// From drawByBlob.ts:17-39
+export const drawByBlob = ({
+  barsData,
+  canvas,
+  currentAudioTime = 0,
+  duration,
+  mainBarColor,
+  secondaryBarColor,
+  // ...
+}: DrawByBlob): void => {
+  const { context, height } = canvasData;
+
+  // Calculate playback progress as percentage
+  const playedPercent = currentAudioTime / duration;
+
+  barsData.forEach((barData, i) => {
+    const mappingPercent = i / barsData.length;
+    const played = playedPercent > mappingPercent;
+
+    paintLine({
+      context,
+      color: played ? secondaryBarColor : mainBarColor,
+      // ...
+    });
+  });
+};
+```
+
+### Color-Based Progress
+
+Bars change color based on whether they've been played:
+
+- **Played bars** (before current position): `secondaryBarColor`
+- **Unplayed bars** (after current position): `mainBarColor`
+
+```tsx
+<VoiceVisualizer
+  controls={controls}
+  mainBarColor="#FFFFFF"        // Unplayed (white)
+  secondaryBarColor="#5e5e5e"  // Played (gray)
+/>
+```
+
+The transition happens smoothly as `currentAudioTime` updates at ~60fps.
+
+### Progress Indicator
+
+A visual line tracks the current playback position:
+
+```tsx
+// From VoiceVisualizer.tsx:473-502
+{isProgressIndicatorShown && isAvailableRecordedAudio && !isProcessingRecordedAudio && duration ? (
+  <div
+    className="voice-visualizer__progress-indicator"
+    style={{
+      left: timeIndicatorStyleLeft < canvasCurrentWidth - 1
+        ? timeIndicatorStyleLeft
+        : canvasCurrentWidth - 1,
+    }}
+  >
+    {isProgressIndicatorTimeShown && (
+      <p className="voice-visualizer__progress-indicator-time">
+        {formattedRecordedAudioCurrentTime}
+      </p>
+    )}
+  </div>
+) : null}
+```
+
+Position calculation:
+
+```typescript
+// From VoiceVisualizer.tsx:392-393
+const timeIndicatorStyleLeft = (currentAudioTime / duration) * canvasCurrentWidth;
+```
+
+This creates a vertical line that moves across the waveform as audio plays.
+
+## Playback End Handling
+
+When audio playback completes naturally:
+
+```typescript
+// From useVoiceVisualizer.tsx:364-373
+const onEndedRecordedAudio = () => {
+  if (rafCurrentTimeUpdateRef.current) {
+    cancelAnimationFrame(rafCurrentTimeUpdateRef.current);
+  }
+  setIsPausedRecordedAudio(true);
+  if (!audioRef?.current) return;
+  audioRef.current.currentTime = 0;
+  setCurrentAudioTime(0);
+  if (onEndAudioPlayback) onEndAudioPlayback();
+};
+```
+
+<Steps>
+  <Step title="Stop Updates">
+    Cancels the time update animation frame
+  </Step>
+  
+  <Step title="Pause State">
+    Sets `isPausedRecordedAudio` to `true`
+  </Step>
+  
+  <Step title="Reset Position">
+    Sets `currentTime` to 0 for next playback
+  </Step>
+  
+  <Step title="Trigger Callback">
+    Calls `onEndAudioPlayback` if provided
+  </Step>
+</Steps>
+
+The 'ended' event listener is added in `startAudioPlayback`:
+
+```typescript
+// From useVoiceVisualizer.tsx:315
+audioRef.current.addEventListener('ended', onEndedRecordedAudio);
+```
+
+And removed in `stopAudioPlayback` and `clearCanvas`.
+
+## State Management
+
+The hook exposes several playback-related states:
+
+```typescript
+const {
+  audioRef,                              // HTMLAudioElement ref
+  isPausedRecordedAudio,                 // true when paused
+  isAvailableRecordedAudio,              // true when audio is ready
+  currentAudioTime,                      // current position in seconds
+  duration,                              // total duration in seconds
+  formattedRecordedAudioCurrentTime,     // formatted current time
+  formattedDuration,                     // formatted duration
+  audioSrc,                              // blob URL for download
+  startAudioPlayback,                    // function to play
+  stopAudioPlayback,                     // function to pause
+  togglePauseResume,                     // function to toggle
+  setCurrentAudioTime,                   // function to seek
+} = useVoiceVisualizer();
+```
+
+### Custom Playback UI Example
+
+```tsx
+const { 
+  isAvailableRecordedAudio,
+  isPausedRecordedAudio,
+  currentAudioTime,
+  duration,
+  startAudioPlayback,
+  stopAudioPlayback,
+  setCurrentAudioTime,
+} = useVoiceVisualizer();
+
+if (!isAvailableRecordedAudio) return null;
+
+return (
+  <div>
+    <button onClick={isPausedRecordedAudio ? startAudioPlayback : stopAudioPlayback}>
+      {isPausedRecordedAudio ? 'Play' : 'Pause'}
+    </button>
+    
+    <input
+      type="range"
+      min={0}
+      max={duration}
+      value={currentAudioTime}
+      onChange={(e) => setCurrentAudioTime(parseFloat(e.target.value))}
+    />
+    
+    <span>{Math.floor(currentAudioTime)}s / {Math.floor(duration)}s</span>
+  </div>
+);
+```
+
+## Error Handling
+
+Playback errors are handled through the `onErrorPlayingAudio` callback:
+
+```tsx
+const controls = useVoiceVisualizer({
+  onErrorPlayingAudio: (error) => {
+    console.error('Playback failed:', error);
+    alert('Unable to play audio. Please try again.');
+  },
+});
+```
+
+Common playback errors:
+- **NotAllowedError**: Browser autoplay policy blocked playback
+- **NotSupportedError**: Audio format not supported
+- **AbortError**: Playback was interrupted
+
+<Info>
+Browsers may block `audio.play()` if it's not triggered by a user interaction. Always initiate playback from a click/tap handler. See [Autoplay policy](https://developer.mozilla.org/en-US/docs/Web/Media/Autoplay_guide) for details.
+</Info>
+
+## Cleanup
+
+When clearing the canvas or unmounting, audio resources are cleaned up:
+
+```typescript
+// From useVoiceVisualizer.tsx:262-267
+if (audioRef?.current) {
+  audioRef.current.removeEventListener('ended', onEndedRecordedAudio);
+  audioRef.current.pause();
+  audioRef.current.src = '';
+  audioRef.current = null;
+}
+```
+
+This ensures:
+- Event listeners are removed to prevent memory leaks
+- Playback is stopped
+- Blob URL is released
+- Reference is nullified
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Recording" icon="microphone" href="/concepts/recording">
+    Learn about audio recording and blob generation
+  </Card>
+  <Card title="Visualization" icon="waveform" href="/concepts/visualization">
+    Understand how waveforms are rendered
+  </Card>
+  <Card title="Custom Controls" icon="sliders" href="/guides/custom-ui">
+    Build custom playback UI controls
+  </Card>
+  <Card title="Hook API" icon="code" href="/api/use-voice-visualizer">
+    Complete useVoiceVisualizer API reference
+  </Card>
+</CardGroup>

@@ -1,0 +1,580 @@
+---
+title: Visualization
+description: How audio data is processed and rendered on canvas
+---
+
+## Overview
+
+React Voice Visualizer renders audio waveforms on an HTML5 Canvas element using the **Web Audio API**. The library supports two visualization modes:
+
+1. **Real-time visualization** - Displays live audio data while recording
+2. **Static waveform** - Displays the complete waveform of recorded audio
+
+This page explains how audio data is transformed into visual bars, the rendering algorithms, and customization options.
+
+## Real-time vs Recorded Visualization
+
+### Real-time Visualization (Live Recording)
+
+While recording, the library uses `drawByLiveStream` to render time-domain data:
+
+```typescript
+// From VoiceVisualizer.tsx:193-209
+drawByLiveStream({
+  audioData,              // Uint8Array from AnalyserNode
+  unit,                   // barWidth + gap * barWidth
+  index: indexRef,        // Current position tracker
+  index2: index2Ref,      // Sub-position within bar
+  canvas: canvasRef.current,
+  picks: picksRef.current,
+  isRecordingInProgress,
+  isPausedRecording,
+  backgroundColor,
+  mainBarColor,
+  secondaryBarColor,
+  barWidth: formattedBarWidth,
+  rounded,
+  animateCurrentPick,
+  fullscreen,
+});
+```
+
+<Info>
+Live visualization updates at ~60fps using `requestAnimationFrame`, synchronized with the browser's repaint cycle.
+</Info>
+
+### Static Waveform (Recorded Audio)
+
+After recording, the library generates a complete waveform from the AudioBuffer:
+
+```typescript
+// From VoiceVisualizer.tsx:305-316
+drawByBlob({
+  barsData,              // Pre-calculated bar heights
+  canvas: canvasRef.current,
+  barWidth: formattedBarWidth,
+  gap: formattedGap,
+  backgroundColor,
+  mainBarColor,
+  secondaryBarColor,
+  currentAudioTime,      // For playback progress
+  rounded,
+  duration,
+});
+```
+
+## Audio Data Processing
+
+### AnalyserNode and Time-Domain Data
+
+During recording, the AnalyserNode provides real-time audio samples:
+
+```typescript
+// From useVoiceVisualizer.tsx:190-194
+const recordingFrame = () => {
+  analyserRef.current!.getByteTimeDomainData(dataArrayRef.current!);
+  setAudioData(new Uint8Array(dataArrayRef.current!));
+  rafRecordingRef.current = requestAnimationFrame(recordingFrame);
+};
+```
+
+The `getByteTimeDomainData()` method fills a `Uint8Array` with values from 0-255, where:
+- **128** = silence (zero amplitude)
+- **0 or 255** = maximum amplitude
+- Values oscillate around 128 based on the audio waveform
+
+<Note>
+The `frequencyBinCount` property determines the array size. For the default FFT size (2048), this is 1024 samples (useVoiceVisualizer.tsx:165).
+</Note>
+
+### AudioBuffer to Waveform Data
+
+When recording stops, the library processes the AudioBuffer to generate bar data:
+
+```typescript
+// From VoiceVisualizer.tsx:262-270 and getBarsData.ts:3-45
+const bufferData = bufferFromRecordedBlob.getChannelData(0);
+
+run({
+  bufferData,                    // Float32Array of PCM samples
+  height: canvasCurrentHeight,
+  width: canvasWidth,
+  barWidth: formattedBarWidth,
+  gap: formattedGap,
+});
+```
+
+The `getBarsData` function processes the raw PCM data:
+
+```typescript
+// From getBarsData.ts:3-45
+export const getBarsData = ({
+  bufferData,
+  height,
+  width,
+  barWidth,
+  gap,
+}: GetBarsDataParams): BarsData[] => {
+  // Calculate how many bars fit in the canvas
+  const units = width / (barWidth + gap * barWidth);
+  
+  // Samples per bar
+  const step = Math.floor(bufferData.length / units);
+  const halfHeight = height / 2;
+
+  let barsData: BarsData[] = [];
+  let maxDataPoint = 0;
+
+  // For each bar position
+  for (let i = 0; i < units; i++) {
+    const maximums: number[] = [];
+    let maxCount = 0;
+
+    // Find average of positive samples in this segment
+    for (let j = 0; j < step && i * step + j < bufferData.length; j++) {
+      const result = bufferData[i * step + j];
+      if (result > 0) {
+        maximums.push(result);
+        maxCount++;
+      }
+    }
+    const maxAvg = maximums.reduce((a, c) => a + c, 0) / maxCount;
+
+    if (maxAvg > maxDataPoint) {
+      maxDataPoint = maxAvg;
+    }
+
+    barsData.push({ max: maxAvg });
+  }
+
+  // Normalize to use 95% of canvas height
+  if (halfHeight * 0.95 > maxDataPoint * halfHeight) {
+    const adjustmentFactor = (halfHeight * 0.95) / maxDataPoint;
+    barsData = barsData.map((bar) => ({
+      max: bar.max > 0.01 ? bar.max * adjustmentFactor : 1,
+    }));
+  }
+
+  return barsData;
+};
+```
+
+<Steps>
+  <Step title="Segmentation">
+    The AudioBuffer is divided into segments, one per bar
+  </Step>
+  
+  <Step title="Averaging">
+    Each segment's positive samples are averaged to get bar height
+  </Step>
+  
+  <Step title="Normalization">
+    Heights are scaled to use 95% of available canvas height
+  </Step>
+  
+  <Step title="Minimum Height">
+    Bars below 0.01 are set to 1 pixel to remain visible
+  </Step>
+</Steps>
+
+<Info>
+This processing happens in a Web Worker to avoid blocking the main thread (VoiceVisualizer.tsx:152-160). The `useWebWorker` hook manages the worker lifecycle.
+</Info>
+
+## Canvas Rendering Algorithm
+
+### Live Stream Rendering
+
+The `drawByLiveStream` helper renders bars from right to left:
+
+```typescript
+// From drawByLiveStream.ts:7-114
+export const drawByLiveStream = ({
+  audioData,
+  unit,
+  index,
+  index2,
+  canvas,
+  isRecordingInProgress,
+  isPausedRecording,
+  picks,
+  backgroundColor,
+  barWidth,
+  mainBarColor,
+  secondaryBarColor,
+  rounded,
+  animateCurrentPick,
+  fullscreen,
+}: DrawByLiveStreamParams) => {
+  const canvasData = initialCanvasSetup({ canvas, backgroundColor });
+  if (!canvasData) return;
+
+  const { context, height, width, halfWidth } = canvasData;
+  
+  if (audioData?.length && isRecordingInProgress) {
+    // Get maximum amplitude from current audio data
+    const maxPick = Math.max(...audioData);
+
+    if (!isPausedRecording) {
+      if (index2.current >= barWidth) {
+        index2.current = 0;
+
+        // Calculate bar position and height
+        const startY = ((height - (maxPick / 258) * height) / height) * 100;
+        const barHeight = ((-height + (maxPick / 258) * height * 2) / height) * 100;
+
+        const newPick: BarItem | null =
+          index.current === barWidth
+            ? { startY, barHeight }
+            : null;
+
+        if (index.current >= unit) {
+          index.current = barWidth;
+        } else {
+          index.current += barWidth;
+        }
+
+        // Maintain fixed number of bars (oldest removed)
+        if (picks.length > (fullscreen ? width : halfWidth) / barWidth) {
+          picks.pop();
+        }
+        picks.unshift(newPick);
+      }
+
+      index2.current += 1;
+    }
+
+    // Paint center line (if not fullscreen)
+    !fullscreen && paintInitialLine();
+
+    // Animate current pick (rightmost bar)
+    if (animateCurrentPick) {
+      paintLine({
+        context,
+        rounded,
+        color: mainBarColor,
+        x: fullscreen ? width : halfWidth,
+        y: height - (maxPick / 258) * height,
+        h: -height + (maxPick / 258) * height * 2,
+        w: barWidth,
+      });
+    }
+
+    // Render all stored picks from right to left
+    let x = (fullscreen ? width : halfWidth) - index2.current;
+    picks.forEach((pick) => {
+      if (pick) {
+        paintLine({
+          context,
+          color: mainBarColor,
+          rounded,
+          x,
+          y: (pick.startY * height) / 100 > height / 2 - 1
+              ? height / 2 - 1
+              : (pick.startY * height) / 100,
+          h: (pick.barHeight * height) / 100 > 2
+              ? (pick.barHeight * height) / 100
+              : 2,
+          w: barWidth,
+        });
+      }
+      x -= barWidth;
+    });
+  } else {
+    picks.length = 0;
+  }
+};
+```
+
+<Note>
+The algorithm divides `maxPick` by 258 (not 255) to prevent bars from reaching the exact edge of the canvas (drawByLiveStream.ts:36-37).
+</Note>
+
+### Blob Rendering
+
+The `drawByBlob` helper renders the complete waveform:
+
+```typescript
+// From drawByBlob.ts:6-39
+export const drawByBlob = ({
+  barsData,
+  canvas,
+  barWidth,
+  gap,
+  backgroundColor,
+  mainBarColor,
+  secondaryBarColor,
+  currentAudioTime = 0,
+  rounded,
+  duration,
+}: DrawByBlob): void => {
+  const canvasData = initialCanvasSetup({ canvas, backgroundColor });
+  if (!canvasData) return;
+
+  const { context, height } = canvasData;
+
+  // Calculate playback progress
+  const playedPercent = currentAudioTime / duration;
+
+  // Render each bar
+  barsData.forEach((barData, i) => {
+    const mappingPercent = i / barsData.length;
+    const played = playedPercent > mappingPercent;
+
+    paintLine({
+      context,
+      color: played ? secondaryBarColor : mainBarColor,
+      rounded,
+      x: i * (barWidth + gap * barWidth),
+      y: height / 2 - barData.max,
+      h: barData.max * 2,
+      w: barWidth,
+    });
+  });
+};
+```
+
+<Info>
+Bars are colored differently based on playback position: `secondaryBarColor` for played portions, `mainBarColor` for unplayed portions (drawByBlob.ts:27).
+</Info>
+
+## Customization Options
+
+### Bar Width and Gap
+
+Control the density of the visualization:
+
+```tsx
+<VoiceVisualizer
+  controls={controls}
+  barWidth={3}      // Width of each bar in pixels
+  gap={2}           // Gap multiplier (gap = barWidth * gap)
+/>
+```
+
+The effective gap is calculated as:
+
+```typescript
+// From VoiceVisualizer.tsx:143
+const unit = formattedBarWidth + formattedGap * formattedBarWidth;
+```
+
+Example:
+- `barWidth={2}`, `gap={1}` → 2px bars with 2px gaps (4px total per unit)
+- `barWidth={4}`, `gap={0.5}` → 4px bars with 2px gaps (6px total per unit)
+
+<Note>
+On mobile devices (`screenWidth < 768`), `barWidth` is automatically increased by 1 pixel when `gap > 0` for better visibility (VoiceVisualizer.tsx:140-142).
+</Note>
+
+### Colors
+
+Customize the visual appearance:
+
+```tsx
+<VoiceVisualizer
+  controls={controls}
+  backgroundColor="#000000"       // Canvas background
+  mainBarColor="#00ff00"          // Unplayed/live bars
+  secondaryBarColor="#808080"    // Played bars
+/>
+```
+
+### Rounded Corners
+
+Control bar corner radius:
+
+```tsx
+<VoiceVisualizer
+  controls={controls}
+  rounded={10}  // Border radius in pixels
+/>
+```
+
+### Animation Speed
+
+Control how frequently the visualization updates during recording:
+
+```tsx
+<VoiceVisualizer
+  controls={controls}
+  speed={3}  // Integer from 1-6 (higher = slower)
+/>
+```
+
+The speed controls how many frames pass before rendering:
+
+```typescript
+// From VoiceVisualizer.tsx:191-212
+if (indexSpeedRef.current >= formattedSpeed || !audioData.length) {
+  indexSpeedRef.current = audioData.length ? 0 : formattedSpeed;
+  drawByLiveStream({...});
+}
+
+indexSpeedRef.current += 1;
+```
+
+- `speed={1}` = updates every frame (60fps)
+- `speed={3}` = updates every 3rd frame (~20fps)
+- `speed={6}` = updates every 6th frame (~10fps)
+
+### Fullscreen Mode
+
+Render bars from the center outward instead of right to left:
+
+```tsx
+<VoiceVisualizer
+  controls={controls}
+  fullscreen={true}
+/>
+```
+
+In fullscreen mode:
+- Bars grow from the center to both edges
+- No secondary center line is painted
+- Uses the full canvas width instead of half
+
+### Current Pick Animation
+
+Toggle the animated bar at the recording position:
+
+```tsx
+<VoiceVisualizer
+  controls={controls}
+  animateCurrentPick={false}  // Disable the rightmost bar animation
+/>
+```
+
+## Canvas Setup and Scaling
+
+### Device Pixel Ratio
+
+The canvas uses `devicePixelRatio` for crisp rendering on high-DPI displays:
+
+```typescript
+// From VoiceVisualizer.tsx:338-356
+function onResize() {
+  if (!canvasContainerRef.current || !canvasRef.current) return;
+
+  indexSpeedRef.current = formattedSpeed;
+
+  // Round to even number for symmetry
+  const roundedHeight =
+    Math.trunc(
+      (canvasContainerRef.current.clientHeight * window.devicePixelRatio) / 2
+    ) * 2;
+
+  setCanvasCurrentWidth(canvasContainerRef.current.clientWidth);
+  setCanvasCurrentHeight(roundedHeight);
+  setCanvasWidth(
+    Math.round(
+      canvasContainerRef.current.clientWidth * window.devicePixelRatio
+    )
+  );
+
+  setIsResizing(false);
+}
+```
+
+<Info>
+On a Retina display (devicePixelRatio = 2), a 400px wide canvas will have an internal resolution of 800px, but be styled to display at 400px. This prevents blurry visualization.
+</Info>
+
+### Responsive Resizing
+
+The component uses `ResizeObserver` to handle container size changes:
+
+```typescript
+// From VoiceVisualizer.tsx:164-186
+useEffect(() => {
+  if (!canvasContainerRef.current) return;
+
+  const handleResize = () => {
+    setScreenWidth(window.innerWidth);
+
+    if (isAvailableRecordedAudio) {
+      _setIsProcessingOnResize(true);
+      setIsResizing(true);
+      debouncedOnResize();
+    } else {
+      onResize();
+    }
+  };
+
+  const resizeObserver = new ResizeObserver(handleResize);
+  resizeObserver.observe(canvasContainerRef.current);
+
+  return () => {
+    resizeObserver.disconnect();
+  };
+}, [width, isAvailableRecordedAudio]);
+```
+
+<Note>
+When recorded audio is present, resize is debounced to avoid excessive re-rendering. The `isProcessingOnResize` state indicates when the waveform is being regenerated (VoiceVisualizer.tsx:171-173).
+</Note>
+
+## Progress Indicators
+
+During playback, a visual indicator shows the current position:
+
+```tsx
+{isProgressIndicatorShown && isAvailableRecordedAudio && !isProcessingRecordedAudio && duration ? (
+  <div
+    className="voice-visualizer__progress-indicator"
+    style={{
+      left: timeIndicatorStyleLeft < canvasCurrentWidth - 1
+        ? timeIndicatorStyleLeft
+        : canvasCurrentWidth - 1,
+    }}
+  >
+    {isProgressIndicatorTimeShown && (
+      <p>{formattedRecordedAudioCurrentTime}</p>
+    )}
+  </div>
+) : null}
+```
+
+The position is calculated as:
+
+```typescript
+// From VoiceVisualizer.tsx:392-393
+const timeIndicatorStyleLeft = (currentAudioTime / duration) * canvasCurrentWidth;
+```
+
+### Hover Preview
+
+Users can hover over the waveform to preview timestamp:
+
+```typescript
+// From VoiceVisualizer.tsx:375-377
+const setCurrentHoveredOffsetX = (e: MouseEvent) => {
+  setHoveredOffsetX(e.offsetX);
+};
+```
+
+The hovered time is calculated:
+
+```typescript
+// From VoiceVisualizer.tsx:466-468
+{formatRecordedAudioTime(
+  (duration / canvasCurrentWidth) * hoveredOffsetX
+)}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Playback" icon="play" href="/concepts/playback">
+    Learn about audio playback controls
+  </Card>
+  <Card title="Recording" icon="microphone" href="/concepts/recording">
+    Understand the recording lifecycle
+  </Card>
+  <Card title="Customization" icon="palette" href="/guides/customization">
+    Customize visualization appearance
+  </Card>
+  <Card title="Component API" icon="code" href="/api/voice-visualizer">
+    Complete VoiceVisualizer component reference
+  </Card>
+</CardGroup>
