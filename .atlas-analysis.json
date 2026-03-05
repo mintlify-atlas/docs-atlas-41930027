@@ -1,0 +1,76 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "React Voice Visualizer",
+  "projectDescription": "React library for audio recording and visualization using the Web Audio API",
+  "theme": "palm",
+  "primaryColor": "#cb0404",
+  "lightColor": "#f3d2d2",
+  "darkColor": "#e37b84",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "installation",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Core Concepts",
+        "pages": [
+          "concepts/overview",
+          "concepts/recording",
+          "concepts/visualization",
+          "concepts/playback"
+        ]
+      },
+      {
+        "group": "API Reference",
+        "pages": [
+          "api/use-voice-visualizer",
+          "api/voice-visualizer-component",
+          "api/types"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/basic-usage",
+          "guides/customization",
+          "guides/preloaded-audio",
+          "guides/custom-ui",
+          "guides/error-handling"
+        ]
+      },
+      {
+        "group": "Migration",
+        "pages": [
+          "migration/v2"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Audio recording using Web Audio API",
+    "Real-time audio visualization",
+    "Customizable canvas rendering",
+    "Audio playback controls",
+    "Preloaded audio blob support",
+    "TypeScript support",
+    "Responsive design"
+  ],
+  "publicApiSurface": [
+    "useVoiceVisualizer() - Main hook for audio recording controls",
+    "VoiceVisualizer - Component for audio visualization",
+    "Controls - TypeScript interface for recorder controls",
+    "startRecording() - Start audio recording",
+    "stopRecording() - Stop audio recording",
+    "togglePauseResume() - Pause/resume recording or playback",
+    "saveAudioFile() - Save recorded audio as WebM file",
+    "clearCanvas() - Clear visualization canvas",
+    "setPreloadedAudioBlob() - Load audio from external source",
+    "startAudioPlayback() - Start audio playback",
+    "stopAudioPlayback() - Stop audio playback"
+  ]
+}
